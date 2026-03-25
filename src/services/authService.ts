@@ -32,7 +32,7 @@ export const authService = {
 
     async getSessions(): Promise<DeviceSession[]> {
         try {
-            const response = await apiClient.get<DeviceSession[]>(`${BACKEND_URL}/api/sessions`, {
+            const response = await apiClient.get<DeviceSession[]>(`${BACKEND_URL}/api/users/sessions`, {
                 withCredentials: true,
             });
             return response.data;
@@ -44,7 +44,7 @@ export const authService = {
 
     async getLinkedAccounts(): Promise<LinkedAccount[]> {
         try {
-            const response = await apiClient.get<LinkedAccount[]>(`${BACKEND_URL}/api/linked-accounts`, {
+            const response = await apiClient.get<LinkedAccount[]>(`${BACKEND_URL}/api/users/linked-accounts`, {
                 withCredentials: true,
             });
             return response.data;
@@ -56,7 +56,7 @@ export const authService = {
 
     async unlinkAccount(providerName: string): Promise<boolean> {
         try {
-            const response = await apiClient.delete(`${BACKEND_URL}/api/linked-accounts/${providerName}`, {
+            const response = await apiClient.delete(`${BACKEND_URL}/api/users/linked-accounts/${providerName}`, {
                 withCredentials: true,
             });
             return response.status === 204;
@@ -69,7 +69,7 @@ export const authService = {
 
     async getCredentials(): Promise<CredentialCategory[]> {
         try {
-            const response = await apiClient.get<CredentialCategory[]>(`${BACKEND_URL}/api/credentials`, {
+            const response = await apiClient.get<CredentialCategory[]>(`${BACKEND_URL}/api/users/credentials`, {
                 withCredentials: true,
             });
             return response.data;
@@ -79,15 +79,32 @@ export const authService = {
         }
     },
 
-    login(idp: string = '') {
-        window.location.href = `http://localhost:8000${BACKEND_URL}/auth/login${idp ? `?idp=${idp}` : ''}`;
+    async getSecureData(): Promise<any> {
+        try {
+            const response = await apiClient.get(`${BACKEND_URL}/api/users/secure-data`, {
+                withCredentials: true,
+            });
+            return response.data;
+        } catch (err) {
+            console.error('Error fetching secure data', err);
+            return null;
+        }
+    },
+
+    login(idp: string = '', redirectTo: string = window.location.pathname + window.location.search) {
+        const params = new URLSearchParams();
+        if (idp) params.append('idp', idp);
+        if (redirectTo) params.append('redirect_to', `${window.location.origin}${redirectTo}`);
+
+        const queryString = params.toString();
+        window.location.href = `http://localhost:8000${BACKEND_URL}/auth/login${queryString ? `?${queryString}` : ''}`;
     },
 
     register() {
         window.location.href = `http://localhost:8000${BACKEND_URL}/auth/login?action=register`;
     },
 
-    logout() {
-        window.location.href = `http://localhost:8000${BACKEND_URL}/auth/logout`;
+    logout(redirectTo: string = window.location.pathname + window.location.search) {
+        window.location.href = `http://localhost:8000${BACKEND_URL}/auth/logout${redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : ''}`;
     }
 };

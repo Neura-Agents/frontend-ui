@@ -2,13 +2,27 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { authService, type User } from '../services/authService';
 import { setAuthToken } from '../api/client';
 
+const decodeToken = (token: string) => {
+    try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map((c) => {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(jsonPayload);
+    } catch (e) {
+        return null;
+    }
+};
+
 interface AuthContextType {
     user: User | null;
     loading: boolean;
-    login: (idp?: string) => void;
+    login: (idp?: string, redirectTo?: string) => void;
     register: () => void;
-    logout: () => void;
+    logout: (redirectTo?: string) => void;
     token: string | null;
+    hasRole: (role: string) => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -26,6 +40,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const fetchUser = async () => {
             const { user: userData, token: userToken } = await authService.checkAuth();
+            if (userData && userToken) {
+                const payload = decodeToken(userToken);
+                if (payload) {
+                    userData.roles = payload.realm_access?.roles || [];
+                    // Always ensure id is set to the Keycloak 'sub' to match backend logic
+                    if (payload.sub) {
+                        userData.id = payload.sub;
+                    }
+                }
+            }
             setAuthToken(userToken);
             setUser(userData);
             setToken(userToken);
@@ -46,6 +70,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             console.log('🔄 Triggering automatic token refresh...');
             const newToken = await authService.refreshToken();
             if (newToken) {
+                const payload = decodeToken(newToken);
+                setUser(prev => prev ? { ...prev, roles: payload?.realm_access?.roles || [] } : null);
                 setAuthToken(newToken);
                 setToken(newToken);
                 console.log('✅ Token refreshed successfully');
@@ -60,12 +86,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return () => clearInterval(refreshInterval);
     }, [token]);
 
-    const login = (idp?: string) => authService.login(idp);
+    const login = (idp?: string, redirectTo?: string) => authService.login(idp, redirectTo);
     const register = () => authService.register();
-    const logout = () => authService.logout();
+    const logout = (redirectTo?: string) => authService.logout(redirectTo);
+    const hasRole = (role: string) => user?.roles?.includes(role) || false;
 
     return (
-        <AuthContext.Provider value={{ user, loading, login, register, logout, token }}>
+        <AuthContext.Provider value={{ user, loading, login, register, logout, token, hasRole }}>
             {children}
         </AuthContext.Provider>
     );

@@ -8,6 +8,7 @@ export interface User {
     family_name?: string;
     email_verified?: boolean;
     idps?: string[];
+    roles?: string[];
 }
 
 export interface ClientSession {

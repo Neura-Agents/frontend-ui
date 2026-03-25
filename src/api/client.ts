@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const KONG_URL = 'http://localhost:8000';
+const KONG_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export const apiClient = axios.create({
     baseURL: KONG_URL,

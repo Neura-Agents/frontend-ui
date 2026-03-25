@@ -1,73 +1,85 @@
-# React + TypeScript + Vite
+# AgenticAI Frontend UI
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The flagship user interface for the AgenticAI platform—a high-performance, aesthetically premium React application designed for managing autonomous agents, tools, and knowledge graphs.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Key Features
 
-## React Compiler
+- **Modern Dashboard**: Real-time monitoring and management of AI agents and their activities.
+- **Agent Builder**: Intuitive, step-by-step interface for configuring agent personalities, models, and tools.
+- **Knowledge Visualization**: Interactive 2D/3D force-directed graphs for exploring Knowledge Graphs (Neo4j).
+- **Tool Management**: Comprehensive UI for registering MCP servers, custom tools, and RAG knowledge bases.
+- **Rich Interaction**: Debounced global search, command palettes (CMDK), and smooth animations.
+- **Responsive Design**: Mobile-first architecture using Tailwind CSS v4 and Shadcn UI.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## 🛠 Technology Stack
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **Framework**: React 19 + Vite 7
+- **Styling**: Tailwind CSS v4 (Modern Engine)
+- **UI Components**: Shadcn UI & Radix UI
+- **Animations**: Framer Motion
+- **Data Fetching**: Axios
+- **Routing**: React Router v7
+- **Visualization**: React Force Graph
+- **Icons**: HugeIcons (Premium) & Lucide
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## 📥 Getting Started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Prerequisites
+
+- Node.js (v18 or higher)
+- Backend services (`agent-service`, `tools-service`, `auth-user-service`) running and reachable.
+
+### Installation
+
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+2. Create a `.env` file based on `.env.example`.
+
+### Development
+
+Run the development server:
+```bash
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Production
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Build the production bundle:
+```bash
+npm run build
 ```
+
+Preview the build:
+```bash
+npm run preview
+```
+
+---
+
+## 🏗 Directory Structure
+
+- **`src/components/`**: Atomic UI components and Shadcn primitives.
+- **`src/pages/`**: Top-level route components (Dashboard, Agents, Tools, etc.).
+- **`src/lib/`**: Shared utilities, API clients, and constants.
+- **`src/hooks/`**: Custom React hooks for state and data management.
+- **`src/assets/`**: Static assets and global styles.
+
+---
+
+## 🌐 Environment Variables
+
+| Variable | Description |
+| :--- | :--- |
+| `VITE_API_URL` | Base URL for the backend API gateway |
+| `VITE_KEYCLOAK_URL` | URL of the Keycloak authentication server |
+| `VITE_KEYCLOAK_REALM` | Keycloak realm name |
+| `VITE_KEYCLOAK_CLIENT_ID`| Public client ID for frontend auth |
