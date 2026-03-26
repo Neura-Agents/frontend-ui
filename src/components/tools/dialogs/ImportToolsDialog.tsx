@@ -105,11 +105,11 @@ export const ImportToolsDialog: React.FC<ImportToolsDialogProps> = ({
                 </div>
 
                 <DialogFooter>
-                    <Button variant="ghost" onClick={() => handleClose(false)}>Cancel</Button>
+                    <Button variant="ghost" className='rounded-full' onClick={() => handleClose(false)}>Cancel</Button>
                     {previewFileName ? (
-                        <Button onClick={onConfirmImport}>Import Tools</Button>
+                        <Button className='rounded-full' onClick={onConfirmImport}>Import Tools</Button>
                     ) : (
-                        <Button onClick={onFetchUrl} disabled={isImportLoading}>
+                        <Button className='rounded-full' onClick={onFetchUrl} disabled={isImportLoading}>
                             {isImportLoading ? 'Fetching...' : 'Fetch Tools'}
                         </Button>
                     )}

@@ -316,9 +316,9 @@ export const CreateEditToolDialog: React.FC<CreateEditToolDialogProps> = ({
                                 />
                             </div>
 
-                            <VisibilitySelector 
-                                value={tool.visibility || 'private'} 
-                                onChange={(val) => onToolChange({ ...tool, visibility: val })} 
+                            <VisibilitySelector
+                                value={tool.visibility || 'private'}
+                                onChange={(val) => onToolChange({ ...tool, visibility: val })}
                             />
 
                             <div className="flex items-center gap-4 p-4 border rounded-xl bg-muted/5">
@@ -462,8 +462,8 @@ export const CreateEditToolDialog: React.FC<CreateEditToolDialogProps> = ({
                 </Tabs>
 
                 <DialogFooter>
-                    <Button variant="ghost" onClick={onCancel}>Cancel</Button>
-                    <Button onClick={onSave}>Save Tool</Button>
+                    <Button className='rounded-full' variant="ghost" onClick={onCancel}>Cancel</Button>
+                    <Button className='rounded-full' onClick={onSave}>Save Tool</Button>
                 </DialogFooter>
             </DialogContent>
         </Dialog>

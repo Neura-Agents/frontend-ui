@@ -203,7 +203,9 @@ export function AppSidebar() {
             collapsible: true,
             items: [
                 { title: "Design System", url: "/design-system", icon: BrandfetchIcon },
-                { title: "Users", url: "/users", icon: UserIcon }
+                { title: "Users", url: "/users", icon: UserIcon },
+                { title: "Platform Features", url: "/platform-features", icon: Settings01Icon },
+                { title: "Platform Roles", url: "/platform-roles", icon: AiNetworkIcon }
             ]
         }] : [])
     ];

@@ -221,7 +221,7 @@ export const CreateMcpServerDialog: React.FC<CreateMcpServerDialogProps> = ({
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col p-6 animate-in fade-in zoom-in-95 duration-300">
+            <DialogContent className="sm:max-w-[700px] max-h-[90vh] flex flex-col animate-in fade-in zoom-in-95 duration-300">
                 <DialogHeader>
                     <div className="flex items-center gap-3 mb-2">
                         <div>
@@ -233,7 +233,7 @@ export const CreateMcpServerDialog: React.FC<CreateMcpServerDialogProps> = ({
                     </div>
                 </DialogHeader>
 
-                <div className="flex-1 overflow-y-auto px-1 space-y-6 mt-4 pb-4">
+                <div className="flex-1 overflow-y-auto px-1 space-y-6 ">
                     {/* Basic Info */}
                     <div className="space-y-4">
                         <div className="grid grid-cols-2 gap-4">
@@ -385,10 +385,11 @@ export const CreateMcpServerDialog: React.FC<CreateMcpServerDialogProps> = ({
                     </div>
                 </div>
 
-                <DialogFooter className="pt-4 border-t border-border/60">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <DialogFooter className="border-t border-border/60">
+                    <Button variant="ghost" className='rounded-full' onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button
                         variant="default"
+                        className='rounded-full'
                         onClick={handleSave}
                         disabled={isSaving || !url || (availableTools.length > 0 && selectedTools.size === 0)}
                     >

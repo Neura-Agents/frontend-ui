@@ -381,10 +381,11 @@ export const ExecuteToolDialog: React.FC<ExecuteToolDialogProps> = ({
                 </div>
 
                 <DialogFooter className="animate-in slide-in-from-bottom-2 duration-300">
-                    <Button variant="ghost" onClick={() => onOpenChange(false)}>Close</Button>
+                    <Button variant="ghost" className='rounded-full' onClick={() => onOpenChange(false)}>Close</Button>
                     <Button
                         variant="default"
                         onClick={handleExecute}
+                        className='rounded-full'
                         disabled={testLoading}
                     >
                         {testLoading ? (

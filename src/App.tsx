@@ -22,6 +22,8 @@ import KnowledgeBasePage from './pages/KnowledgeBasePage';
 import KnowledgeGraphPage from './pages/KnowledgeGraphPage';
 import AgentsPage from './pages/AgentsPage';
 import AgentChatPage from './pages/AgentChatPage';
+import PlatformFeaturesPage from './pages/PlatformFeaturesPage';
+import PlatformRolesPage from './pages/PlatformRolesPage';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; role?: string }> = ({ children, role }) => {
@@ -114,6 +116,22 @@ function App() {
                     element={
                       <ProtectedRoute role="platform-admin">
                         <UsersPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/platform-features"
+                    element={
+                      <ProtectedRoute role="platform-admin">
+                        <PlatformFeaturesPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
+                    path="/platform-roles"
+                    element={
+                      <ProtectedRoute role="platform-admin">
+                        <PlatformRolesPage />
                       </ProtectedRoute>
                     }
                   />
