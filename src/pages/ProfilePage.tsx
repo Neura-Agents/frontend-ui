@@ -12,6 +12,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { CodeBlock } from '@/components/ui/code-block';
 import { DestructiveConfirmDialog } from '@/components/reusable/DestructiveConfirmDialog';
 
+const KONG_URL = import.meta.env.VITE_API_URL;
 const Profile: React.FC = () => {
     const { user, loading, token, hasRole } = useAuth();
     const { showAlert } = useAlert();
@@ -178,7 +179,7 @@ const Profile: React.FC = () => {
                         </CardContent>
                         <CardFooter>
                             <Button asChild variant="default" size="sm" className="w-full">
-                                <Link to='http://localhost:8000/backend/auth/login?action=UPDATE_PROFILE'>Edit Profile</Link>
+                                <Link to={`${KONG_URL}/backend/auth/login?action=UPDATE_PROFILE`}>Edit Profile</Link>
                             </Button>
                         </CardFooter>
                     </Card>
@@ -197,7 +198,7 @@ const Profile: React.FC = () => {
                                         {hasPassword && <Badge variant="default">Connected</Badge>}
                                     </div>
                                         <Button asChild variant="default" size="xs">
-                                            <Link to='http://localhost:8000/backend/auth/login?action=UPDATE_PASSWORD'>{hasPassword ? 'Update Password' : 'Set Password'}</Link>
+                                            <Link to={`${KONG_URL}/backend/auth/login?action=UPDATE_PASSWORD`}>{hasPassword ? 'Update Password' : 'Set Password'}</Link>
                                         </Button>
                                     </div>
                                 );

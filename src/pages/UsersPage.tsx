@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DataTable } from '@/tables/users/data-table';
 import { columns, type User } from '@/tables/users/columns';
 
-
+const KONG_URL = import.meta.env.VITE_API_URL;
 const UsersPage: React.FC = () => {
     const { token } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
@@ -26,7 +26,7 @@ const UsersPage: React.FC = () => {
         setLoading(true);
         try {
             const offset = (page - 1) * limit;
-            const response = await axios.get(`http://localhost:8000/backend/api/users`, {
+            const response = await axios.get(`${KONG_URL}/backend/api/users`, {
                 headers: { Authorization: `Bearer ${token}` },
                 params: { search, limit, offset }
             });

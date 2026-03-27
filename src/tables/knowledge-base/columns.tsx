@@ -20,7 +20,7 @@ export type Document = {
     processed_chunks?: number;
     total_chunks?: number;
 }
-
+const KONG_URL = import.meta.env.VITE_API_URL;
 export const getColumns = (onDelete?: (id: string, name: string) => void): ColumnDef<Document>[] => [
     {
         accessorKey: "name",
@@ -123,7 +123,7 @@ export const getColumns = (onDelete?: (id: string, name: string) => void): Colum
             const isNew = row.original.isNew;
 
             const token = getAuthToken();
-            const viewUrl = `http://localhost:8000/backend/api/storage/view/${storageId}${token ? `?jwt=${token}` : ''}`;
+            const viewUrl = `${KONG_URL}/backend/api/storage/view/${storageId}${token ? `?jwt=${token}` : ''}`;
 
             return (
                 <div className="flex items-center gap-2 justify-end">

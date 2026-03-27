@@ -1,7 +1,7 @@
 import { apiClient, getAuthToken } from '../api/client';
 
 const API_URL = '/backend/api/knowledge';
-const KONG_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const KONG_URL = import.meta.env.VITE_API_URL;
 
 export interface KnowledgeBase {
     id: string;

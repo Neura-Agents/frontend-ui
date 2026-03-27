@@ -15,6 +15,9 @@ export type User = {
     created_at: string;
 }
 
+const KEYCLOAK_URL = import.meta.env.VITE_KEYCLOAK_URL;
+const KEYCLOAK_REALM = import.meta.env.VITE_KEYCLOAK_REALM;
+
 export const columns: ColumnDef<User>[] = [
     {
         accessorKey: "user",
@@ -67,7 +70,7 @@ export const columns: ColumnDef<User>[] = [
         id: "actions",
         header: "",
         cell: ({ row }) => {
-            const url = 'http://localhost:8081/admin/master/console/#/neura-agents/users/' + row.original.keycloak_id;
+            const url = `${KEYCLOAK_URL}/admin/master/console/#/${KEYCLOAK_REALM}/users/` + row.original.keycloak_id;
             return (
                 <Link
                     to={url}

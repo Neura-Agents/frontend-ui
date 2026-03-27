@@ -11,11 +11,11 @@ export interface ExecutionEvent {
     type: string;
     data: any;
 }
-
+const KONG_URL = import.meta.env.VITE_API_URL;
 export const executionService = {
     async triggerAgent(slug: string, messages: ExecutionMessage[], onEvent: (event: ExecutionEvent) => void) {
         const token = getAuthToken();
-        const response = await fetch(`http://localhost:8000${BASE_URL}/${slug}/stream`, {
+        const response = await fetch(`${KONG_URL}${BASE_URL}/${slug}/stream`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -33,7 +33,7 @@ export const executionService = {
 
     async subscribeToWorkflow(workflowId: string, onEvent: (event: ExecutionEvent) => void) {
         const token = getAuthToken();
-        const response = await fetch(`http://localhost:8000${BASE_URL}/agent/workflow/subscribe/${workflowId}`, {
+        const response = await fetch(`${KONG_URL}${BASE_URL}/agent/workflow/subscribe/${workflowId}`, {
             method: 'GET',
             headers: {
                 'Authorization': `Bearer ${token}`,

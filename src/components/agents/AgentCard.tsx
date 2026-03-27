@@ -34,6 +34,7 @@ export interface Agent {
     system_prompt?: string;
     capabilities?: any[];
 }
+const KONG_URL = import.meta.env.VITE_API_URL;
 
 interface AgentCardProps {
     agent: Agent;
@@ -47,7 +48,7 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onDelete }) => {
     const openAgentDiscovery = (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        const discoveryUrl = `http://localhost:8000/${agent.slug}/.well-known/agent.json`;
+        const discoveryUrl = `${KONG_URL}/${agent.slug}/.well-known/agent.json`;
         window.open(discoveryUrl, '_blank');
     };
 

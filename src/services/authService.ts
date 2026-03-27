@@ -5,6 +5,7 @@ export * from '../models/auth';
 
 const BACKEND_URL = '/backend';
 
+const KONG_URL = import.meta.env.VITE_API_URL;
 export const authService = {
     async checkAuth(): Promise<{ user: User | null; token: string | null }> {
         try {
@@ -97,14 +98,14 @@ export const authService = {
         if (redirectTo) params.append('redirect_to', `${window.location.origin}${redirectTo}`);
 
         const queryString = params.toString();
-        window.location.href = `http://localhost:8000${BACKEND_URL}/auth/login${queryString ? `?${queryString}` : ''}`;
+        window.location.href = `${KONG_URL}${BACKEND_URL}/auth/login${queryString ? `?${queryString}` : ''}`;
     },
 
     register() {
-        window.location.href = `http://localhost:8000${BACKEND_URL}/auth/login?action=register`;
+        window.location.href = `${KONG_URL}${BACKEND_URL}/auth/login?action=register`;
     },
 
     logout(redirectTo: string = window.location.pathname + window.location.search) {
-        window.location.href = `http://localhost:8000${BACKEND_URL}/auth/logout${redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : ''}`;
+        window.location.href = `${KONG_URL}${BACKEND_URL}/auth/logout${redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : ''}`;
     }
 };
