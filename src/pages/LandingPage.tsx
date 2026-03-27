@@ -1,38 +1,31 @@
-import { useLocation, Navigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { Button } from '../components/ui/button';
-import { Typography } from '@/components/ui/typography';
+import Section1 from "@/components/landingPage/section1";
+import Section2 from "@/components/landingPage/section2";
+import Section3 from "@/components/landingPage/section3";
+import Section4 from "@/components/landingPage/section4";
+import Section5 from "@/components/landingPage/section5";
+import Footer from "@/components/landingPage/footer";
+import { useState } from "react";
+
 
 const LandingPage: React.FC = () => {
-    const { login, user } = useAuth();
-    const location = useLocation();
-    
-    const from = location.state?.from || new URLSearchParams(location.search).get('from') || "/agents";
-
-    // If the user is already logged in, they shouldn't be here
-    // Redirect them to where they came from or /agents
-    if (user) {
-        return <Navigate to={from} replace />;
-    }
-
+    const [showFooterGlow, setShowFooterGlow] = useState(false);
     return (
-        <div className="flex flex-col items-center justify-center min-h-screen p-6">
-            <div className="max-w-md w-full text-center space-y-8">
-                <Typography font="season-mix" as="h1" scale="5xl" weight="bold">
-                    Welcome
-                </Typography>
-                <p className="text-gray-400">
-                    Please sign in to continue to your dashboard.
-                </p>
-                <Button
-                    onClick={() => login('', from)}
-                    variant="default"
-                    size="lg"
-                    className="w-full font-bold py-6 rounded-xl transition-all"
-                >
-                    Login to System
-                </Button>
+        <div className="relative min-h-screen w-screen">
+
+            {/* Main Content */}
+            <div className="relative z-10 rounded-b-4xl pointer-events-none">
+                <Section1 />
+                <Section2 />
+                <Section3 />
+                <Section4 />
+                <Section5 onVisible={setShowFooterGlow} />
             </div>
+
+            {/* Footer (behind) */}
+            <div className="fixed bottom-0 left-0 w-full z-0">
+                <Footer animateGlow={showFooterGlow} />
+            </div>
+
         </div>
     );
 };

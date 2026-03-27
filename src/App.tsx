@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AlertProvider, useAlert } from './context/AlertContext';
 import { ThemeProvider } from './context/ThemeContext';
@@ -24,10 +24,13 @@ import AgentsPage from './pages/AgentsPage';
 import AgentChatPage from './pages/AgentChatPage';
 import PlatformFeaturesPage from './pages/PlatformFeaturesPage';
 import PlatformRolesPage from './pages/PlatformRolesPage';
+import AboutUsPage from './pages/AboutUsPage';
+import SystemPromptsPage from './pages/SystemPromptsPage';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; role?: string }> = ({ children, role }) => {
-  const { user, loading, hasRole } = useAuth();
+  const { user, loading, hasRole, login } = useAuth();
+  const location = useLocation();
   const { showAlert } = useAlert();
   const alertShown = React.useRef(false);
 
@@ -42,11 +45,15 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; role?: string }> = (
     }
   }, [loading, user, role, hasRole, showAlert]);
 
-  if (loading) return null;
+  useEffect(() => {
+    if (!loading && !user) {
+      login("", location.pathname + location.search);
+    }
+  }, [loading, user, login, location]);
 
-  if (!user) return <Navigate to="/" state={{ from: window.location.pathname + window.location.search }} replace />;
+  if (loading || !user) return null;
 
-  if (role && !hasRole(role)) return <Navigate to="/" replace />;
+  if (role && !hasRole(role)) return <Navigate to="/" state={{ from: location.pathname + location.search }} replace />;
 
   return <>{children}</>;
 };
@@ -136,11 +143,23 @@ function App() {
                     }
                   />
                   <Route
+                    path="/platform-prompts"
+                    element={
+                      <ProtectedRoute role="platform-admin">
+                        <SystemPromptsPage />
+                      </ProtectedRoute>
+                    }
+                  />
+                  <Route
                     path="/pricing"
                     element={
-                      <ProtectedRoute role="platform-users">
-                        <PricingPage />
-                      </ProtectedRoute>
+                      <PricingPage />
+                    }
+                  />
+                  <Route
+                    path="/about"
+                    element={
+                      <AboutUsPage />
                     }
                   />
                   <Route

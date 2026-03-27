@@ -29,7 +29,8 @@ import {
     AiNetworkIcon,
     ArrowDown01Icon,
     AiScanIcon,
-    Home09Icon
+    Home09Icon,
+    File01Icon
 } from '@hugeicons/core-free-icons';
 import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation } from "react-router-dom";
@@ -205,7 +206,8 @@ export function AppSidebar() {
                 { title: "Design System", url: "/design-system", icon: BrandfetchIcon },
                 { title: "Users", url: "/users", icon: UserIcon },
                 { title: "Platform Features", url: "/platform-features", icon: Settings01Icon },
-                { title: "Platform Roles", url: "/platform-roles", icon: AiNetworkIcon }
+                { title: "Platform Roles", url: "/platform-roles", icon: AiNetworkIcon },
+                { title: "System Prompts", url: "/platform-prompts", icon: File01Icon }
             ]
         }] : [])
     ];

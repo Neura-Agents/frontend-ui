@@ -1,6 +1,6 @@
 import React from 'react';
 
-type TextScale = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+type TextScale = 'xs' | 'sm' | 'base' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl' | '7xl';
 type FontFamily = 'sans' | 'matter' | 'season' | 'season-mix';
 type FontWeight = 'normal' | 'medium' | 'semibold' | 'bold';
 
@@ -58,6 +58,7 @@ export const Typography: React.FC<TypographyProps> = ({
         '3xl': 'text-3xl',
         '4xl': 'text-4xl',
         '5xl': 'text-5xl',
+        '7xl': 'text-7xl',
     };
 
     const fonts: Record<FontFamily, string> = {

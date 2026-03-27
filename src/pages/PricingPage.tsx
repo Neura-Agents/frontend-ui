@@ -2,6 +2,10 @@ import React from 'react';
 import { Typography } from '@/components/ui/typography';
 import { PricingCard, type PricingCardProps } from '@/components/pricing/pricing-card';
 import { FAQSection } from '@/components/pricing/faq-section';
+import { useAuth } from '@/context/AuthContext';
+import { useState } from 'react';
+import Footer from '@/components/landingPage/footer';
+import AboutSpacer from '@/components/aboutUs/AboutSpacer';
 
 const pricingData: PricingCardProps[] = [
     {
@@ -71,17 +75,34 @@ const pricingData: PricingCardProps[] = [
 ];
 
 const PricingPage: React.FC = () => {
+    const { user } = useAuth();
+    const [showFooterGlow, setShowFooterGlow] = useState(false);
 
-    return (
-        <div className="container mx-auto max-w-7xl animate-in fade-in duration-700 space-y-24 pt-32 md:pt-0">
-            <section className="lg:mb-16 md:mb-10 mb-6 lg:pl-0 md:pl-0 pl-16 lg:pb-0 lg:border-0 md:border-0 md:pb-0 border-b border-border pb-4 pt-7 fixed top-0 bg-card z-50 lg:static lg:bg-transparent lg:z-auto md:static md:bg-transparent md:z-auto w-full">
-                <Typography variant="page-header">
-                    Pricing
-                </Typography>
-                <Typography variant="page-description">
-                    Simple, transparent pricing for every use case.
-                </Typography>
-            </section>
+    const PricingContent = (
+        <div className={`container mx-auto max-w-7xl animate-in fade-in duration-700 space-y-6 ${user ? 'pt-32 md:pt-0 pb-12' : 'pt-24'}`}>
+            {
+                user ? (
+                    <section className="lg:mb-16 md:mb-10 mb-6 lg:pl-0 md:pl-0 pl-16 lg:pb-0 lg:border-0 md:border-0 md:pb-0 border-b border-border pb-4 pt-7 fixed top-0 bg-card z-50 lg:static lg:bg-transparent lg:z-auto md:static md:bg-transparent md:z-auto w-full">
+                        <Typography variant="page-header">
+                            Pricing
+                        </Typography>
+                        <Typography variant="page-description">
+                            Simple, transparent pricing for every use case.
+                        </Typography>
+                    </section>
+                )
+                    :
+                    (
+                        <section className="px-2">
+                            <Typography variant="page-header">
+                                Pricing
+                            </Typography>
+                            <Typography variant="page-description">
+                                Simple, transparent pricing for every use case.
+                            </Typography>
+                        </section>
+                    )
+            }
 
             <div className="space-y-12 px-4">
                 <div className='flex flex-col items-center text-center'>
@@ -103,6 +124,27 @@ const PricingPage: React.FC = () => {
             <section className="pb-12 pt-12">
                 <FAQSection />
             </section>
+        </div>
+    );
+
+    if (user) {
+        return PricingContent;
+    }
+
+    return (
+        <div className="relative min-h-screen w-screen overflow-x-hidden">
+            {/* Main Content */}
+            <div className="relative z-10 rounded-b-4xl pointer-events-none">
+                <div className="pointer-events-auto bg-card rounded-b-4xl pb-10">
+                    {PricingContent}
+                </div>
+                <AboutSpacer onVisible={setShowFooterGlow} />
+            </div>
+
+            {/* Footer (behind) */}
+            <div className="fixed bottom-0 left-0 w-full z-0">
+                <Footer animateGlow={showFooterGlow} />
+            </div>
         </div>
     );
 };

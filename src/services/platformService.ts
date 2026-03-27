@@ -24,6 +24,22 @@ export interface Role {
     created_at: string;
 }
 
+export interface Prompt {
+    id: string;
+    name: string;
+    type: string;
+    content: string;
+    prompt_text?: string;
+    metadata?: Record<string, any>;
+    storage_path: string;
+    is_active: boolean;
+    targeting_users?: string[];
+    targeting_agents?: string[];
+    targeting_roles?: string[];
+    created_at: string;
+    updated_at: string;
+}
+
 export const platformService = {
     getFeatures: async (): Promise<FeatureFlag[]> => {
         const response = await apiClient.get(`${API_BASE_URL}/features`);
@@ -48,5 +64,36 @@ export const platformService = {
     getRoles: async (): Promise<Role[]> => {
         const response = await apiClient.get(`${API_BASE_URL}/roles`);
         return response.data.roles;
+    },
+
+    listPrompts: async (type?: string): Promise<Prompt[]> => {
+        const response = await apiClient.get(`${API_BASE_URL}/prompts/list`, { params: { type } });
+        return response.data.prompts;
+    },
+
+    uploadPrompt: async (file: File, name: string, type: string): Promise<Prompt> => {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('name', name);
+        formData.append('type', type);
+        const response = await apiClient.post(`${API_BASE_URL}/prompts/upload`, formData, {
+            headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        return response.data.prompt;
+    },
+
+    getActivePrompt: async (type: string): Promise<Prompt> => {
+        const response = await apiClient.get(`${API_BASE_URL}/prompts/active/${type}`);
+        return response.data.prompt;
+    },
+    
+    activatePrompt: async (id: string): Promise<Prompt> => {
+        const response = await apiClient.put(`${API_BASE_URL}/prompts/${id}/activate`);
+        return response.data.prompt;
+    },
+
+    updatePromptTargeting: async (id: string, targeting: { users?: string[], agents?: string[], roles?: string[] }): Promise<any> => {
+        const response = await apiClient.put(`${API_BASE_URL}/prompts/${id}/targeting`, targeting);
+        return response.data;
     }
 };

@@ -34,6 +34,7 @@ export const themeVariables: ThemeVariable[] = [
     { label: 'Primary', variable: '--primary', darkDefault: '#5f9fff', lightDefault: '#347ce9', category: 'Core' },
     { label: 'Primary Foreground', variable: '--primary-foreground', darkDefault: '#5f9fff', lightDefault: '#fcfcfc', category: 'Core' },
     { label: 'Secondary', variable: '--secondary', darkDefault: '#262626', lightDefault: '#efefef', category: 'Core' },
+    { label: 'PrimartContrary', variable: '--primary-contrary', darkDefault: '#5f9fff', lightDefault: '#fcfcfc', category: 'Core' },
 
     // Interface
     { label: 'Muted Foreground', darkDefault: '#a1a1a1', lightDefault: '#636363', variable: '--muted-foreground', category: 'Interface' },
@@ -121,6 +122,7 @@ const ThemeSettingsPage: React.FC = () => {
             `  --primary: ${v('--primary')};`,
             `  --primary-foreground: ${v('--primary-foreground')};`,
             `  --secondary: ${v('--secondary')};`,
+            `  --primary-contrary: ${v('--primary-contrary')};`,
             `  --secondary-foreground: var(--foreground);`,
             `  --muted: var(--secondary);`,
             `  --muted-foreground: ${v('--muted-foreground')};`,
