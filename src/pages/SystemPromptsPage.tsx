@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Typography } from '@/components/ui/typography';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,14 +8,10 @@ import {
     Search02Icon,
     Refresh01Icon,
     Add01Icon,
-    File01Icon,
     Calendar03Icon,
     CheckmarkCircle02Icon,
     Clock01Icon,
     ArrowRight01Icon,
-    UserMultiple02Icon,
-    RoboticIcon,
-    UserAccountIcon,
     Settings01Icon
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -25,33 +22,97 @@ import { CreatePromptDialog } from '@/components/admin/dialogs/CreatePromptDialo
 import { ViewPromptDialog } from '@/components/admin/dialogs/ViewPromptDialog';
 import { EditPromptTargetingDialog } from '@/components/admin/dialogs/EditPromptTargetingDialog';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import { Link } from 'react-router-dom';
+import Pagination from '@/components/ui/pagination';
+import { CodeBlock } from '@/components/ui/code-block';
 
 const SystemPromptsPage: React.FC = () => {
     const { showAlert } = useAlert();
+    const [searchParams, setSearchParams] = useSearchParams();
+
+    // Core state
     const [prompts, setPrompts] = useState<Prompt[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
+
+    // Pagination and Search state
+    const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
+    const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('q') || '');
+    const [currentPage, setCurrentPage] = useState(parseInt(searchParams.get('page') || '1'));
+    const [totalPages, setTotalPages] = useState(0);
+    const [totalPrompts, setTotalPrompts] = useState(0);
+    const pageSize = 12;
+
+    // Dialog state
     const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
     const [selectedPrompt, setSelectedPrompt] = useState<Prompt | null>(null);
     const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
     const [isTargetingDialogOpen, setIsTargetingDialogOpen] = useState(false);
 
-    const fetchPrompts = async () => {
+    // Sync state from URL
+    useEffect(() => {
+        const queryFromUrl = searchParams.get('q') || '';
+        if (queryFromUrl !== searchQuery) {
+            setSearchQuery(queryFromUrl);
+        }
+        const pageFromUrl = parseInt(searchParams.get('page') || '1');
+        if (pageFromUrl !== currentPage) {
+            setCurrentPage(pageFromUrl);
+        }
+    }, [searchParams]);
+
+    // Handle search debounce and URL sync
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+
+            const newParams = new URLSearchParams(searchParams);
+            if (searchQuery) {
+                newParams.set('q', searchQuery);
+            } else {
+                newParams.delete('q');
+            }
+
+            // If the query changed from what's in URL, reset to page 1
+            if (searchQuery !== (searchParams.get('q') || '')) {
+                newParams.set('page', '1');
+                setCurrentPage(1);
+            }
+
+            setSearchParams(newParams, { replace: true });
+        }, 500);
+        return () => clearTimeout(timer);
+    }, [searchQuery, setSearchParams]);
+
+    // Update URL when page changes
+    useEffect(() => {
+        const currentUrlPage = parseInt(searchParams.get('page') || '1');
+        if (currentPage !== currentUrlPage) {
+            const newParams = new URLSearchParams(searchParams);
+            newParams.set('page', currentPage.toString());
+            setSearchParams(newParams, { replace: true });
+        }
+    }, [currentPage, setSearchParams, searchParams]);
+
+    const fetchPrompts = useCallback(async () => {
         try {
             setIsLoading(true);
-            const data = await platformService.listPrompts();
-            setPrompts(data);
+            const data = await platformService.listPrompts({
+                page: currentPage,
+                limit: pageSize,
+                q: debouncedSearch
+            });
+            setPrompts(data.prompts);
+            setTotalPrompts(data.total);
+            setTotalPages(data.totalPages);
         } catch (error) {
             showAlert({ title: 'Error', description: 'Failed to fetch prompts', variant: 'destructive' });
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [currentPage, debouncedSearch, pageSize, showAlert]);
 
     useEffect(() => {
         fetchPrompts();
-    }, []);
+    }, [fetchPrompts]);
 
     const handleUploadPrompt = async (file: File, name: string, type: string) => {
         try {
@@ -84,13 +145,8 @@ const SystemPromptsPage: React.FC = () => {
         }
     };
 
-    const filteredPrompts = prompts.filter(p =>
-        p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        p.type.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-
     return (
-        <div className="container mx-auto max-w-7xl animate-in fade-in duration-700 space-y-8 pt-32 md:pt-0">
+        <div className="container mx-auto max-w-7xl animate-in fade-in duration-700 space-y-8 pt-32 md:pt-0 pb-20">
             {/* Header Section */}
             <section className="lg:mb-16 md:mb-10 mb-6 lg:pl-0 md:pl-0 pl-16 lg:pb-0 lg:border-0 md:border-0 md:pb-0 border-b border-border pb-4 pt-7 fixed top-0 bg-card z-50 lg:static lg:bg-transparent lg:z-auto md:static md:bg-transparent md:z-auto w-full">
                 <Typography variant="page-header">
@@ -109,7 +165,7 @@ const SystemPromptsPage: React.FC = () => {
                             <HugeiconsIcon icon={Search02Icon} size={18} />
                         </div>
                         <Input
-                            placeholder="Search prompts by name or type..."
+                            placeholder="Search prompts by name or ID..."
                             className="pl-10 rounded-full h-10 focus-visible:ring-primary/20 bg-card/50"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
@@ -124,24 +180,47 @@ const SystemPromptsPage: React.FC = () => {
                             <HugeiconsIcon icon={Add01Icon} size={18} />
                             Upload Prompt
                         </Button>
-                        <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={fetchPrompts}>
-                            <HugeiconsIcon icon={Refresh01Icon} size={18} />
+                        <Button
+                            variant="outline"
+                            size="icon"
+                            className="rounded-full h-10 w-10 shrink-0"
+                            onClick={fetchPrompts}
+                            disabled={isLoading}
+                        >
+                            <HugeiconsIcon icon={Refresh01Icon} size={18} className={isLoading ? "animate-spin" : ""} />
                         </Button>
                     </div>
                 </div>
+
+                {totalPrompts > 0 && (
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium mt-6 animate-in fade-in">
+                        <Badge variant="soft">
+                            {totalPrompts}
+                        </Badge>
+                        <span>prompts found</span>
+                        {totalPages > 1 && (
+                            <span className="ml-auto text-primary/60">
+                                Page {currentPage} of {totalPages}
+                            </span>
+                        )}
+                    </div>
+                )}
             </header>
 
             {/* Content Area */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2 pb-20">
                 {isLoading ? (
-                    <div className="col-span-full py-20 text-center text-muted-foreground animate-pulse font-season-mix tracking-wider">
-                        Synchronizing global templates...
-                    </div>
-                ) : filteredPrompts.length === 0 ? (
+                    Array.from({ length: 6 }).map((_, i) => (
+                        <Card key={i} className="flex flex-col h-64 border-border/50 bg-card/30 animate-pulse">
+                            <CardHeader className="space-y-4">
+                                <div className="h-6 w-2/3 bg-muted rounded" />
+                                <div className="h-4 w-full bg-muted/50 rounded" />
+                                <div className="h-4 w-1/2 bg-muted/50 rounded" />
+                            </CardHeader>
+                        </Card>
+                    ))
+                ) : prompts.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-32 space-y-6">
-                        <div className="size-20 rounded-full bg-muted/30 border border-border/50 flex items-center justify-center text-muted-foreground/40">
-                            <HugeiconsIcon icon={File01Icon} size={40} />
-                        </div>
                         <div className="text-center space-y-2">
                             <Typography as="h3" scale="xl" className="text-foreground tracking-tight font-season-mix">
                                 {searchQuery ? 'No match found' : 'No prompts managed yet'}
@@ -153,9 +232,9 @@ const SystemPromptsPage: React.FC = () => {
                             </Typography>
                         </div>
                     </div>
-                ) : filteredPrompts.map((prompt) => (
+                ) : prompts.map((prompt) => (
                     <Card key={prompt.id} className={`flex flex-col h-full hover:border-primary/40 transition-all group border-border relative overflow-hidden`}>
-                        <CardHeader className="pb-4">
+                        <CardHeader className="pb-2">
                             <div className="flex flex-col gap-4">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-3">
@@ -213,37 +292,37 @@ const SystemPromptsPage: React.FC = () => {
                                     )}
                                 </div>
 
-                                {/* Targeting Indicators */}
-                                {(prompt.targeting_users?.length || prompt.targeting_agents?.length || prompt.targeting_roles?.length) ? (
-                                    <div className="flex flex-wrap gap-2 mt-3">
-                                        {(prompt.targeting_users?.length ?? 0) > 0 && (
-                                            <Badge variant="soft" className="rounded-md px-1.5 h-6 gap-1 text-[10px]">
-                                                <HugeiconsIcon icon={UserMultiple02Icon} size={10} />
-                                                {prompt.targeting_users?.length} Users
-                                            </Badge>
-                                        )}
-                                        {(prompt.targeting_agents?.length ?? 0) > 0 && (
-                                            <Badge variant="soft" className="rounded-md px-1.5 h-6 gap-1 text-[10px]">
-                                                <HugeiconsIcon icon={RoboticIcon} size={10} />
-                                                {prompt.targeting_agents?.length} Agents
-                                            </Badge>
-                                        )}
-                                        {(prompt.targeting_roles?.length ?? 0) > 0 && (
-                                            <Badge variant="soft" className="rounded-md px-1.5 h-6 gap-1 text-[10px]">
-                                                <HugeiconsIcon icon={UserAccountIcon} size={10} />
-                                                {prompt.targeting_roles?.length} Roles
-                                            </Badge>
-                                        )}
-                                    </div>
-                                ) : null}
-
                                 <CardDescription className="line-clamp-2 min-h-[40px] text-sm leading-relaxed">
                                     {prompt.metadata?.description || `Stored at: ${prompt.storage_path}`}
                                 </CardDescription>
+                                <div className="flex flex-col gap-1">
+                                    <Typography className="text-xs text-muted-foreground">Prompt Id</Typography>
+                                    <CodeBlock>{prompt.id || 'N/A'}</CodeBlock>
+                                </div>
                             </div>
                         </CardHeader>
                         <CardContent className="mt-auto space-y-4">
                             <div className="flex flex-col gap-2">
+                                {/* Targeting Indicators */}
+                                {(prompt.targeting_users?.length || prompt.targeting_agents?.length || prompt.targeting_roles?.length) ? (
+                                    <div className="flex flex-wrap gap-2 mt-3">
+                                        {(prompt.targeting_users?.length ?? 0) > 0 && (
+                                            <Badge variant="warning">
+                                                {prompt.targeting_users?.length} {prompt.targeting_users?.length === 1 ? "User" : "Users"}
+                                            </Badge>
+                                        )}
+                                        {(prompt.targeting_agents?.length ?? 0) > 0 && (
+                                            <Badge variant="soft">
+                                                {prompt.targeting_agents?.length} {prompt.targeting_agents?.length === 1 ? "Agent" : "Agents"}
+                                            </Badge>
+                                        )}
+                                        {(prompt.targeting_roles?.length ?? 0) > 0 && (
+                                            <Badge variant="success">
+                                                {prompt.targeting_roles?.length} {prompt.targeting_roles?.length === 1 ? "Role" : "Roles"}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                ) : null}
 
                                 <div className="flex items-center gap-2 mb-2">
                                     <Badge variant="default" className="rounded-full font-mono text-[10px] tracking-tighter uppercase px-2">
@@ -291,6 +370,17 @@ const SystemPromptsPage: React.FC = () => {
                     </Card>
                 ))}
             </div>
+
+            {/* Pagination Component */}
+            {totalPages > 1 && (
+                <div className="flex justify-center pt-8">
+                    <Pagination
+                        currentPage={currentPage}
+                        totalPages={totalPages}
+                        onPageChange={setCurrentPage}
+                    />
+                </div>
+            )}
 
             <CreatePromptDialog
                 isOpen={isUploadDialogOpen}

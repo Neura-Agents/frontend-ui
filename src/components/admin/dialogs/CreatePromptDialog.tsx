@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -14,6 +14,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Upload01Icon, File01Icon, Cancel01Icon } from '@hugeicons/core-free-icons';
 import { Typography } from '@/components/ui/typography';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { platformService } from '@/services/platformService';
 
 interface CreatePromptDialogProps {
     isOpen: boolean;
@@ -28,9 +29,25 @@ export const CreatePromptDialog: React.FC<CreatePromptDialogProps> = ({
 }) => {
     const [name, setName] = useState('');
     const [type, setType] = useState('agent-execution');
+    const [promptTypes, setPromptTypes] = useState<{ id: string, name: string, description: string }[]>([]);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        const fetchTypes = async () => {
+            try {
+                const types = await platformService.getPromptTypes();
+                setPromptTypes(types);
+                if (types.length > 0) {
+                    setType(types[0].name);
+                }
+            } catch (error) {
+                console.error('Failed to fetch prompt types', error);
+            }
+        };
+        fetchTypes();
+    }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -46,7 +63,7 @@ export const CreatePromptDialog: React.FC<CreatePromptDialogProps> = ({
             await onUpload(selectedFile, name, type);
             // Reset and close
             setName('');
-            setType('agent-execution');
+            if (promptTypes.length > 0) setType(promptTypes[0].name);
             setSelectedFile(null);
             onOpenChange(false);
         } catch (error) {
@@ -86,9 +103,11 @@ export const CreatePromptDialog: React.FC<CreatePromptDialogProps> = ({
                                     <SelectValue placeholder="Select type" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="agent-execution">Agent Execution</SelectItem>
-                                    <SelectItem value="tool-generation">Tool Generation</SelectItem>
-                                    <SelectItem value="summary-generation">Summary Generation</SelectItem>
+                                    {promptTypes.map((pt) => (
+                                        <SelectItem key={pt.id} value={pt.name}>
+                                            <span className="capitalize">{pt.name.replace(/-/g, ' ')}</span>
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
                         </div>

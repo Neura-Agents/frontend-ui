@@ -66,9 +66,16 @@ export const platformService = {
         return response.data.roles;
     },
 
-    listPrompts: async (type?: string): Promise<Prompt[]> => {
-        const response = await apiClient.get(`${API_BASE_URL}/prompts/list`, { params: { type } });
-        return response.data.prompts;
+    listPrompts: async (options?: { 
+        type?: string, 
+        page?: number, 
+        limit?: number, 
+        promptId?: string, 
+        name?: string,
+        q?: string
+    }): Promise<{ prompts: Prompt[], total: number, totalPages: number }> => {
+        const response = await apiClient.get(`${API_BASE_URL}/prompts/list`, { params: options });
+        return response.data;
     },
 
     uploadPrompt: async (file: File, name: string, type: string): Promise<Prompt> => {
@@ -95,5 +102,10 @@ export const platformService = {
     updatePromptTargeting: async (id: string, targeting: { users?: string[], agents?: string[], roles?: string[] }): Promise<any> => {
         const response = await apiClient.put(`${API_BASE_URL}/prompts/${id}/targeting`, targeting);
         return response.data;
+    },
+    
+    getPromptTypes: async (): Promise<{ id: string, name: string, description: string }[]> => {
+        const response = await apiClient.get(`${API_BASE_URL}/prompts/types`);
+        return response.data.types;
     }
 };
