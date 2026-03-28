@@ -49,7 +49,7 @@ const Section1: React.FC = () => {
                 transition={{ duration: 1.5, ease: "easeOut" }}
                 className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 
     w-[900px] h-[900px] rounded-full 
-    bg-[radial-gradient(ellipse_100%_30%,theme(colors.primary.DEFAULT)_40%,transparent_70%)] 
+    bg-[radial-gradient(ellipse_100%_30%,var(--color-primary)_40%,transparent_70%)] 
     blur-3xl pointer-events-none"
             />
             <div className='flex flex-col items-center justify-center gap-10'>
@@ -72,12 +72,12 @@ const Section1: React.FC = () => {
                         Create, deploy, and manage autonomous agents with ease. Powered by frontier-class models. Delivering population-scale impact.
                     </motion.h2>
                 </div>
-                <motion.div 
-                    variants={itemVariants} 
+                <motion.div
+                    variants={itemVariants}
                     className="relative z-30 pointer-events-auto cursor-pointer"
                 >
-                    <Button 
-                        size="lg" 
+                    <Button
+                        size="lg"
                         onClick={() => login('', from)}
                         className='rounded-full text-sm md:text-base px-6 py-4 md:py-6 font-semibold font-season-mix hover:cursor-pointer relative z-40'
                     >

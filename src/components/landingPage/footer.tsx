@@ -43,7 +43,7 @@ const Footer: React.FC<{ animateGlow: boolean }> = ({ animateGlow }) => {
                 transition={{ duration: 1.2, ease: "easeOut" }}
                 className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2
     w-[900px] h-[900px] rounded-full
-    bg-[radial-gradient(ellipse_100%_30%,theme(colors.primary.DEFAULT),transparent_40%)]
+    bg-[radial-gradient(ellipse_100%_30%,var(--color-primary),transparent_40%)]
     blur-3xl pointer-events-none"
             />
 

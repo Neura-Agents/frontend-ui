@@ -57,7 +57,7 @@ const AboutHero: React.FC = () => {
             <div
                 className="
                     absolute inset-0 z-0
-                    bg-[radial-gradient(ellipse_90%_70%_at_center,theme(colors.primary.DEFAULT/0.6)_0%,transparent_60%)]
+                    bg-[radial-gradient(ellipse_90%_70%_at_center,var(--color-primary)_0%,transparent_60%)]
                     pointer-events-none
                 "
             />
