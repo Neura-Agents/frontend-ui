@@ -61,7 +61,7 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
                 console.log('SSE Event:', eventType, data);
                 
                 if (eventType === 'doc_progress' || eventType === 'doc_start' || eventType === 'doc_completed' || eventType === 'doc_failed') {
-                    const { docId, status, processedChunks, totalChunks } = data;
+                    const { docId, processedChunks, totalChunks } = data;
                     
                     setLocalDocs(prev => prev.map(doc => {
                         if (doc.id === docId) {
