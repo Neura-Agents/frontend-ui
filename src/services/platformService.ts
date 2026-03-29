@@ -66,11 +66,11 @@ export const platformService = {
         return response.data.roles;
     },
 
-    listPrompts: async (options?: { 
-        type?: string, 
-        page?: number, 
-        limit?: number, 
-        promptId?: string, 
+    listPrompts: async (options?: {
+        type?: string,
+        page?: number,
+        limit?: number,
+        promptId?: string,
         name?: string,
         q?: string
     }): Promise<{ prompts: Prompt[], total: number, totalPages: number }> => {
@@ -93,7 +93,7 @@ export const platformService = {
         const response = await apiClient.get(`${API_BASE_URL}/prompts/active/${type}`);
         return response.data.prompt;
     },
-    
+
     activatePrompt: async (id: string): Promise<Prompt> => {
         const response = await apiClient.put(`${API_BASE_URL}/prompts/${id}/activate`);
         return response.data.prompt;
@@ -103,7 +103,7 @@ export const platformService = {
         const response = await apiClient.put(`${API_BASE_URL}/prompts/${id}/targeting`, targeting);
         return response.data;
     },
-    
+
     getPromptTypes: async (): Promise<{ id: string, name: string, description: string }[]> => {
         const response = await apiClient.get(`${API_BASE_URL}/prompts/types`);
         return response.data.types;

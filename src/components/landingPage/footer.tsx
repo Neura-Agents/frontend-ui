@@ -10,6 +10,8 @@ interface FooterLink {
     external?: boolean;
 }
 
+const APP_NAME = import.meta.env.VITE_APP_NAME;
+
 const Footer: React.FC<{ animateGlow: boolean }> = ({ animateGlow }) => {
     const footerLinks: Record<string, FooterLink[]> = {
         Products: [
@@ -103,7 +105,7 @@ const Footer: React.FC<{ animateGlow: boolean }> = ({ animateGlow }) => {
                 {/* Bottom Section */}
                 <div className="flex flex-col md:flex-row items-center justify-between pt-8 gap-8">
                     <Typography scale="xs" className="text-muted-foreground/80 flex items-center gap-1.5">
-                        Copyright Neura Agents {new Date().getFullYear()}
+                        Copyright {APP_NAME} {new Date().getFullYear()}
                     </Typography>
                     <Typography scale="xs" className="text-muted-foreground/80 flex items-center gap-1.5">
                         All rights reserved Bengaluru - 560032

@@ -6,6 +6,8 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation } from 'react-router-dom';
 
+const APP_NAME = import.meta.env.VITE_APP_NAME;
+
 const Section4: React.FC = () => {
     const { login } = useAuth();
     const location = useLocation();
@@ -70,7 +72,7 @@ const Section4: React.FC = () => {
                             {/* Card Heading - Perfectly Centered */}
                             <div className="flex flex-col gap-8 items-center">
                                 <h2 className="font-season-mix text-2xl md:text-3xl lg:text-4xl xl:text-5xl text-background text-center px-4 md:px-8 leading-tight max-w-2xl">
-                                    Build the future of Agents <br className="hidden md:block" /> with Neura Agents.
+                                    Build the future of Agents <br className="hidden md:block" /> with {APP_NAME}.
                                 </h2>
 
                                 {/* Call to Action Button - Faded Glass with Premium Hover - Responsive Sizing */}
