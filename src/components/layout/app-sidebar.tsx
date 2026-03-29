@@ -11,21 +11,21 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from '@hugeicons/react';
-import { 
-    Home09Icon, 
-    AiScanIcon, 
-    Add01Icon, 
-    McpServerFreeIcons, 
-    ToolsIcon, 
-    BrainIcon, 
-    AiNetworkIcon, 
-    KeyIcon, 
-    PieChartIcon, 
-    Wallet03Icon, 
-    Invoice01Icon, 
-    BrandfetchIcon, 
-    UserIcon, 
-    Settings01Icon, 
+import {
+    Home09Icon,
+    AiScanIcon,
+    Add01Icon,
+    McpServerFreeIcons,
+    ToolsIcon,
+    BrainIcon,
+    AiNetworkIcon,
+    KeyIcon,
+    PieChartIcon,
+    Wallet03Icon,
+    Invoice01Icon,
+    BrandfetchIcon,
+    UserIcon,
+    Settings01Icon,
     File01Icon,
     Refresh01Icon as LoadingIcon,
     InformationCircleIcon,
@@ -235,7 +235,7 @@ export function AppSidebar() {
                 <SidebarHeader className="flex justify-between items-center py-4 border-0">
                     <div className={cn("flex items-center flex-nowrap", state === "collapsed" ? "justify-center w-full focus:outline-none gap-2" : "justify-between w-full px-2")}>
                         {state === "expanded" && (
-                            <Logo fontSize="text-lg" className="gap-2" />
+                            <Logo fontSize="text-lg" className="gap-2" isSidebar />
                         )}
                         <SidebarTrigger className="hidden md:flex hover:cursor-pointer" />
                     </div>

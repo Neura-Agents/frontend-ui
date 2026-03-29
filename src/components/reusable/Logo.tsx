@@ -9,6 +9,7 @@ interface LogoProps {
     showIcon?: boolean;
     fontSize?: string; // Still supported for custom sizes
     variant?: 'sm' | 'md' | 'lg';
+    isSidebar?: boolean;
 }
 
 const Logo: React.FC<LogoProps> = ({
@@ -17,6 +18,7 @@ const Logo: React.FC<LogoProps> = ({
     showIcon = true,
     fontSize,
     variant = 'md',
+    isSidebar = false
 }) => {
     const variantStyles = {
         sm: {
@@ -41,7 +43,7 @@ const Logo: React.FC<LogoProps> = ({
     return (
         <div className={cn("flex items-center", styles.gap, className)}>
             <Link
-                to="/"
+                to={isSidebar ? "/dashboard" : "/"}
                 className={cn(
                     fontSize || styles.text,
                     "group/logo font-light tracking-tight text-foreground hover:cursor-pointer flex flex-row items-center transition-all duration-300 font-season-mix whitespace-nowrap flex-nowrap",

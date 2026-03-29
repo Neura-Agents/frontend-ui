@@ -26,6 +26,8 @@ import PlatformFeaturesPage from './pages/PlatformFeaturesPage';
 import PlatformRolesPage from './pages/PlatformRolesPage';
 import AboutUsPage from './pages/AboutUsPage';
 import SystemPromptsPage from './pages/SystemPromptsPage';
+import NotFoundPage from './pages/NotFoundPage';
+import DashboardPage from './pages/DashboardPage';
 
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; role?: string }> = ({ children, role }) => {
@@ -69,6 +71,14 @@ function App() {
                 <Route element={<Layout />}>
                   <Route path="/" element={<LandingPage />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route
+                    path="/dashboard"
+                    element={
+                      <ProtectedRoute role="platform-admin">
+                        <DashboardPage />
+                      </ProtectedRoute>
+                    }
+                  />
                   <Route
                     path="/design-system"
                     element={
@@ -219,7 +229,7 @@ function App() {
                     }
                   />
                   {/* Fallback route */}
-                  <Route path="*" element={<Navigate to="/" replace />} />
+                  <Route path="*" element={<NotFoundPage />} />
                 </Route>
               </Routes>
             </AuthProvider>

@@ -1,13 +1,13 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Header from './Header';
 import { Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarInset, SidebarTrigger, useSidebar } from "@/components/ui/sidebar"
 import { AppSidebar } from './app-sidebar';
 import { useAuth } from '../../context/AuthContext';
-import { useEffect } from 'react';
+import Logo from '../reusable/Logo';
 
 const LayoutContent: React.FC = () => {
-    const { user } = useAuth();
+    const { user, loading } = useAuth();
     const { openMobile } = useSidebar();
     const { pathname } = useLocation();
     const scrollRef = React.useRef<HTMLDivElement>(null);
@@ -18,6 +18,16 @@ const LayoutContent: React.FC = () => {
             scrollRef.current.scrollTo(0, 0);
         }
     }, [pathname]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen bg-background animate-in fade-in duration-500">
+                <div className="animate-pulse">
+                    <Logo variant="lg" />
+                </div>
+            </div>
+        );
+    }
 
     return (
         <>
