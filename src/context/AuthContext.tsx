@@ -35,29 +35,46 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetching = useRef(false);
 
     useEffect(() => {
-        if (fetching.current) return;
-        fetching.current = true;
-
         const fetchUser = async () => {
-            const { user: userData, token: userToken } = await authService.checkAuth();
-            if (userData && userToken) {
-                const payload = decodeToken(userToken);
-                if (payload) {
-                    userData.roles = payload.realm_access?.roles || [];
-                    // Always ensure id is set to the Keycloak 'sub' to match backend logic
-                    if (payload.sub) {
-                        userData.id = payload.sub;
+            if (fetching.current) return;
+            fetching.current = true;
+            
+            try {
+                const { user: userData, token: userToken } = await authService.checkAuth();
+                if (userData && userToken) {
+                    const payload = decodeToken(userToken);
+                    if (payload) {
+                        userData.roles = payload.realm_access?.roles || [];
+                        if (payload.sub) {
+                            userData.id = payload.sub;
+                        }
                     }
                 }
+                setAuthToken(userToken);
+                setUser(userData);
+                setToken(userToken);
+            } catch (err) {
+                console.error("Auth check failed:", err);
+                setUser(null);
+                setToken(null);
+            } finally {
+                setLoading(false);
+                fetching.current = false;
             }
-            setAuthToken(userToken);
-            setUser(userData);
-            setToken(userToken);
-            setLoading(false);
-            fetching.current = false;
         };
 
         fetchUser();
+
+        // Listen for browser navigation (like back button) out of bfcache
+        const handlePageShow = (event: PageTransitionEvent) => {
+            if (event.persisted) {
+                console.log("🔄 Restored from bfcache, re-checking auth...");
+                fetchUser();
+            }
+        };
+
+        window.addEventListener('pageshow', handlePageShow);
+        return () => window.removeEventListener('pageshow', handlePageShow);
     }, []);
 
     // Automatic token refresh
@@ -88,7 +105,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const login = (idp?: string, redirectTo?: string) => authService.login(idp, redirectTo);
     const register = () => authService.register();
-    const logout = (redirectTo?: string) => authService.logout(redirectTo);
+    const logout = (redirectTo?: string) => {
+        authService.logout(redirectTo);
+    };
     const hasRole = (role: string) => user?.roles?.includes(role) || false;
 
     return (

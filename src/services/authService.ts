@@ -9,8 +9,14 @@ const KONG_URL = import.meta.env.VITE_API_URL;
 export const authService = {
     async checkAuth(): Promise<{ user: User | null; token: string | null }> {
         try {
-            const response = await apiClient.get<{ user: User | null; token: string | null }>(`${BACKEND_URL}/auth/user`, {
+            // Add cache-busting query param and headers to prevent stale browser cache on back navigation
+            const response = await apiClient.get<{ user: User | null; token: string | null }>(`${BACKEND_URL}/auth/user?t=${Date.now()}`, {
                 withCredentials: true,
+                headers: {
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache',
+                    'Expires': '0',
+                }
             });
             return response.data;
         } catch (err) {

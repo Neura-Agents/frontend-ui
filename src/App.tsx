@@ -60,6 +60,179 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; role?: string }> = (
   return <>{children}</>;
 };
 
+function AppRoutes() {
+  const { user } = useAuth();
+  return (
+    <Routes>
+      <Route element={<Layout />}>
+        <Route path="/" element={
+          user ?
+            <ProtectedRoute role="platform-users">
+              <DashboardPage />
+            </ProtectedRoute>
+            :
+            <LandingPage />
+        } />
+        {
+          !user &&
+          <Route
+            path="/about"
+            element={
+              <AboutUsPage />
+            }
+          />
+        }
+        <Route path="/profile" element={<Profile />} />
+        <Route
+          path="/design-system"
+          element={
+            <ProtectedRoute role="platform-admin">
+              <UIComponents />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/agent-create"
+          element={
+            <ProtectedRoute role="platform-users">
+              <CreateEditAgentPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/agent-edit/:id"
+          element={
+            <ProtectedRoute role="platform-users">
+              <CreateEditAgentPage isEdit={true} />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/api-keys-management"
+          element={
+            <ProtectedRoute role="platform-users">
+              <ApiKeysPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/usage"
+          element={
+            <ProtectedRoute role="platform-users">
+              <UsagePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/theme-settings"
+          element={
+            <ProtectedRoute role="platform-admin">
+              <ThemeSettingsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <ProtectedRoute role="platform-admin">
+              <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform-features"
+          element={
+            <ProtectedRoute role="platform-admin">
+              <PlatformFeaturesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform-roles"
+          element={
+            <ProtectedRoute role="platform-admin">
+              <PlatformRolesPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/platform-prompts"
+          element={
+            <ProtectedRoute role="platform-admin">
+              <SystemPromptsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/pricing"
+          element={
+            <PricingPage />
+          }
+        />
+        <Route
+          path="/billing"
+          element={
+            <ProtectedRoute role="platform-users">
+              <BillingPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/mcp"
+          element={
+            <ProtectedRoute role="platform-users">
+              <MCPPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tools"
+          element={
+            <ProtectedRoute role="platform-users">
+              <ToolsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/knowledge-base"
+          element={
+            <ProtectedRoute role="platform-users">
+              <KnowledgeBasePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/agents"
+          element={
+            <ProtectedRoute role="platform-users">
+              <AgentsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/agent-chat/:slug"
+          element={
+            <ProtectedRoute role="platform-users">
+              <AgentChatPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/knowledge-graph"
+          element={
+            <ProtectedRoute role="platform-users">
+              <KnowledgeGraphPage />
+            </ProtectedRoute>
+          }
+        />
+        {/* Fallback route */}
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Routes>
+  );
+}
+
 function App() {
   return (
     <Router>
@@ -67,177 +240,12 @@ function App() {
         <AlertProvider>
           <TooltipProvider delayDuration={400}>
             <AuthProvider>
-              <Routes>
-                <Route element={<Layout />}>
-                  <Route path="/" element={<LandingPage />} />
-                  <Route path="/profile" element={<Profile />} />
-                  <Route
-                    path="/dashboard"
-                    element={
-                      <ProtectedRoute role="platform-admin">
-                        <DashboardPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/design-system"
-                    element={
-                      <ProtectedRoute role="platform-admin">
-                        <UIComponents />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/agent-create"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <CreateEditAgentPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/agent-edit/:id"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <CreateEditAgentPage isEdit={true} />
-                      </ProtectedRoute>
-                    }
-                  />
-
-                  <Route
-                    path="/api-keys-management"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <ApiKeysPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/usage"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <UsagePage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/theme-settings"
-                    element={
-                      <ProtectedRoute role="platform-admin">
-                        <ThemeSettingsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/users"
-                    element={
-                      <ProtectedRoute role="platform-admin">
-                        <UsersPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/platform-features"
-                    element={
-                      <ProtectedRoute role="platform-admin">
-                        <PlatformFeaturesPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/platform-roles"
-                    element={
-                      <ProtectedRoute role="platform-admin">
-                        <PlatformRolesPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/platform-prompts"
-                    element={
-                      <ProtectedRoute role="platform-admin">
-                        <SystemPromptsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/pricing"
-                    element={
-                      <PricingPage />
-                    }
-                  />
-                  <Route
-                    path="/about"
-                    element={
-                      <AboutUsPage />
-                    }
-                  />
-                  <Route
-                    path="/billing"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <BillingPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/mcp"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <MCPPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/tools"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <ToolsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/knowledge-base"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <KnowledgeBasePage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/agents"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <AgentsPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/agent-chat/:slug"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <AgentChatPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  <Route
-                    path="/knowledge-graph"
-                    element={
-                      <ProtectedRoute role="platform-users">
-                        <KnowledgeGraphPage />
-                      </ProtectedRoute>
-                    }
-                  />
-                  {/* Fallback route */}
-                  <Route path="*" element={<NotFoundPage />} />
-                </Route>
-              </Routes>
+              <AppRoutes />
             </AuthProvider>
           </TooltipProvider>
         </AlertProvider>
       </ThemeProvider>
     </Router>
-
   );
 }
 

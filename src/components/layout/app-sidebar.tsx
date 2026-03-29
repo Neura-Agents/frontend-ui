@@ -235,7 +235,7 @@ export function AppSidebar() {
                 <SidebarHeader className="flex justify-between items-center py-4 border-0">
                     <div className={cn("flex items-center flex-nowrap", state === "collapsed" ? "justify-center w-full focus:outline-none gap-2" : "justify-between w-full px-2")}>
                         {state === "expanded" && (
-                            <Logo fontSize="text-lg" className="gap-2" isSidebar />
+                            <Logo fontSize="text-lg" className="gap-2" />
                         )}
                         <SidebarTrigger className="hidden md:flex hover:cursor-pointer" />
                     </div>

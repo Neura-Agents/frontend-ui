@@ -37,7 +37,7 @@ const NotFoundPage: React.FC = () => {
 
         {/* 404 Text */}
         <motion.h1
-          className="text-9xl md:text-[12rem] font-season font-bold tracking-tighter text-transparent bg-clip-text bg-linear-to-b from-foreground to-muted-foreground/30 leading-none mb-4"
+          className="text-4xl md:text-[12rem] font-season tracking-tighter leading-none mb-4"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
