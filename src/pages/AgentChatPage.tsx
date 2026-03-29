@@ -12,19 +12,8 @@ import { cn } from '@/lib/utils';
 import {
     Delete02Icon,
     Message01Icon,
-    ThumbsUpIcon,
-    ThumbsDownIcon,
-    Copy01Icon,
-    MoreHorizontalIcon,
-    Share01Icon,
-    Refresh01Icon
+    Copy01Icon
 } from '@hugeicons/core-free-icons';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from '@/components/ui/code-block';
@@ -35,6 +24,7 @@ interface Block {
     data?: any;
     result?: any;
     isLoading?: boolean;
+    callId?: string;
 }
 
 interface Message {
@@ -47,8 +37,15 @@ interface Message {
     status?: 'running' | 'completed' | 'failed' | 'cancelled';
 }
 
-const TypingEffect: React.FC<{ text: string; delay?: number; onUpdate?: () => void }> = ({ text, delay = 10, onUpdate }) => {
+const TypingEffect: React.FC<{ text: string; delay?: number; onUpdate?: () => void; onComplete?: () => void }> = ({ text, delay = 10, onUpdate, onComplete }) => {
     const [displayedText, setDisplayedText] = useState("");
+
+    const hasTriggeredComplete = useRef(false);
+    
+    // Reset the completion guard if text changes
+    useEffect(() => {
+        hasTriggeredComplete.current = false;
+    }, [text]);
 
     useEffect(() => {
         if (displayedText.length < text.length) {
@@ -65,8 +62,11 @@ const TypingEffect: React.FC<{ text: string; delay?: number; onUpdate?: () => vo
                 onUpdate?.();
             }, delay);
             return () => clearTimeout(timeout);
+        } else if (displayedText.length === text.length && text.length > 0 && !hasTriggeredComplete.current) {
+            hasTriggeredComplete.current = true;
+            onComplete?.();
         }
-    }, [text, displayedText, delay, onUpdate]);
+    }, [text, displayedText, delay, onUpdate, onComplete]);
 
     useEffect(() => {
         const handleVisibilityChange = () => {
@@ -150,6 +150,7 @@ const AgentChatPage: React.FC = () => {
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const lastMessageCount = useRef(0);
+    const [typingFinished, setTypingFinished] = useState<Record<string, boolean>>({});
 
     const scrollToBottom = (behavior: ScrollBehavior = "smooth", force = false) => {
         if (messagesEndRef.current && messagesContainerRef.current) {
@@ -277,35 +278,61 @@ const AgentChatPage: React.FC = () => {
                     let newStatus = m.status;
                     let newWorkflowId = m.workflowId;
 
+                    // Support A2A protocol structure where data is inside result.metadata
+                    const metadata = event.data?.metadata || {};
+                    const internalData = event.data || {};
+
                     if (event.type === 'start') {
-                        newWorkflowId = event.data.workflow_id;
+                        newWorkflowId = metadata.workflow_id || internalData.workflow_id;
                         setCurrentWorkflowId(newWorkflowId || null);
                     } else if (event.type === 'WorkflowStarted') {
                         // Reconnection event
-                        if (event.data.workflowId) {
-                            newWorkflowId = event.data.workflowId;
-                            setCurrentWorkflowId(newWorkflowId || null);
-                        }
+                        newWorkflowId = internalData.workflowId || metadata.workflow_id;
+                        setCurrentWorkflowId(newWorkflowId || null);
                     } else if (event.type === 'token') {
-                        newContent += event.data.delta;
-                        // Add to last block if it's text, or create new text block
-                        const lastBlock = newBlocks[newBlocks.length - 1];
-                        if (lastBlock && lastBlock.type === 'text') {
-                            lastBlock.content = (lastBlock.content || "") + event.data.delta;
-                        } else {
-                            newBlocks.push({ type: 'text', content: event.data.delta });
+                        const delta = metadata.delta || internalData.delta || "";
+                        if (delta) {
+                            newContent += delta;
+                            // Add to last block if it's text, or create new text block
+                            const lastIdx = newBlocks.length - 1;
+                            if (lastIdx >= 0 && newBlocks[lastIdx].type === 'text') {
+                                newBlocks[lastIdx] = {
+                                    ...newBlocks[lastIdx],
+                                    content: (newBlocks[lastIdx].content || "") + delta
+                                };
+                            } else {
+                                newBlocks.push({ type: 'text', content: delta });
+                            }
                         }
                     } else if (event.type === 'tool_call') {
+                        const toolName = metadata.name || internalData.name;
+                        const toolArgs = metadata.arguments || internalData.arguments;
+                        const callId = metadata.call_id || internalData.call_id || metadata.callId || internalData.callId;
+
                         newBlocks.push({
                             type: 'tool_activity',
-                            data: event.data,
+                            data: { name: toolName, arguments: toolArgs },
+                            callId: callId,
                             isLoading: true
                         });
                     } else if (event.type === 'tool_result') {
-                        // Find matching tool call block
+                        const toolName = metadata.name || internalData.name;
+                        const callId = metadata.call_id || internalData.call_id || metadata.callId || internalData.callId;
+                        let toolResult = metadata.result || internalData.result;
+
+                        // Try parsing JSON if result is a string
+                        if (typeof toolResult === 'string') {
+                            try {
+                                toolResult = JSON.parse(toolResult);
+                            } catch (e) {
+                                // Keep as string
+                            }
+                        }
+
+                        // Find matching tool call block (prefer callId, fallback to name)
                         const toolIdx = [...newBlocks].reverse().findIndex(b =>
                             b.type === 'tool_activity' &&
-                            b.data.name === event.data.name &&
+                            (callId && b.callId === callId || (!callId && b.data.name === toolName)) &&
                             !b.result
                         );
 
@@ -313,13 +340,14 @@ const AgentChatPage: React.FC = () => {
                             const actualIdx = newBlocks.length - 1 - toolIdx;
                             newBlocks[actualIdx] = {
                                 ...newBlocks[actualIdx],
-                                result: event.data.result,
+                                result: toolResult,
                                 isLoading: false
                             };
                         }
                     } else if (event.type === 'end') {
-                        newStatus = event.data.status === 'success' ? 'completed' : 'failed';
-                        if (event.data.status === 'cancelled') newStatus = 'cancelled';
+                        const status = metadata.status || internalData.status || 'success';
+                        newStatus = status === 'success' ? 'completed' : 'failed';
+                        if (status === 'cancelled') newStatus = 'cancelled';
                         setCurrentWorkflowId(null);
                         setIsStopping(false);
                         setIsExecuting(false);
@@ -329,7 +357,7 @@ const AgentChatPage: React.FC = () => {
                         );
                         // @ts-ignore
                         if (window.eventSource) window.eventSource.close();
-                    } else if (event.type === 'Error') {
+                    } else if (event.type === 'Error' || event.type === 'error') {
                         newStatus = 'failed';
                         setCurrentWorkflowId(null);
                         setIsStopping(false);
@@ -451,6 +479,11 @@ const AgentChatPage: React.FC = () => {
                                                             text={block.content || ""}
                                                             delay={10}
                                                             onUpdate={() => scrollToBottom("auto")}
+                                                            onComplete={() => {
+                                                                if (message.status !== 'running' && idx === message.blocks.length - 1) {
+                                                                    setTypingFinished(prev => ({ ...prev, [message.id]: true }));
+                                                                }
+                                                            }}
                                                         />
                                                     </div>
                                                 );
@@ -475,22 +508,12 @@ const AgentChatPage: React.FC = () => {
                                     </div>
 
                                     {/* Message Actions */}
-                                    {message.status !== 'running' && message.role === 'assistant' && (
+                                    {message.status !== 'running' && 
+                                     message.role === 'assistant' && 
+                                     (message.blocks.length === 0 || 
+                                      message.blocks[message.blocks.length - 1].type !== 'text' || 
+                                      typingFinished[message.id]) && (
                                         <div className="flex items-center gap-1 mt-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                            >
-                                                <HugeiconsIcon icon={ThumbsUpIcon} size={16} />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                            >
-                                                <HugeiconsIcon icon={ThumbsDownIcon} size={16} />
-                                            </Button>
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
@@ -501,31 +524,6 @@ const AgentChatPage: React.FC = () => {
                                             >
                                                 <HugeiconsIcon icon={Copy01Icon} size={16} />
                                             </Button>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                    >
-                                                        <HugeiconsIcon icon={MoreHorizontalIcon} size={16} />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="start" className="w-40">
-                                                    <DropdownMenuItem className="gap-2">
-                                                        <HugeiconsIcon icon={Share01Icon} size={14} />
-                                                        <span>Share</span>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem className="gap-2">
-                                                        <HugeiconsIcon icon={Refresh01Icon} size={14} />
-                                                        <span>Regenerate</span>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem variant="destructive" className="gap-2">
-                                                        <HugeiconsIcon icon={Delete02Icon} size={14} />
-                                                        <span>Delete</span>
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
                                         </div>
                                     )}
                                 </div>

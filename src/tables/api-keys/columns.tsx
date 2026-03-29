@@ -3,109 +3,103 @@
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { ArrowUpRight01Icon, MoreHorizontalIcon } from "@hugeicons/core-free-icons"
+import { MoreHorizontalIcon, Refresh01Icon, Delete02Icon } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
 import type { ColumnDef } from "@tanstack/react-table"
-import { Link } from "react-router-dom"
+import { format } from "date-fns"
 
-// This type is used to define the shape of our data.
-// You can use a Zod schema here if you want.
 export type ApiKey = {
     id: string
     name: string
-    key: string
-    created: string
+    key_prefix: string
+    last_four: string
+    status: 'active' | 'revoked'
+    is_default: boolean
+    created_at: string
 }
 
-export const columns: ColumnDef<ApiKey>[] = [
+export const getColumns = (
+    onRotate: (id: string) => void,
+    onDelete: (id: string) => void
+): ColumnDef<ApiKey>[] => [
     {
         accessorKey: "name",
         header: "Name",
+        cell: ({ row }) => (
+            <div className="flex items-center gap-2 font-medium">
+                <span>{row.original.name}</span>
+                {row.original.is_default && (
+                    <Badge variant="soft" className="text-[10px] py-0 px-1 opacity-70">Default</Badge>
+                )}
+            </div>
+        )
     },
     {
         accessorKey: "key",
         header: "Key",
         cell: ({ row }) => {
-            const key = row.getValue("key") as string
+            const { key_prefix, last_four } = row.original
             return (
-                <Badge variant="soft">{key}</Badge>
+                <div className="font-mono text-sm opacity-80">
+                    <code>{key_prefix}••••{last_four}</code>
+                </div>
             )
         }
     },
     {
-        accessorKey: "created",
-        header: "Created",
-    },
-    {
-        accessorKey: "usage_url",
-        header: "Usage",
+        accessorKey: "status",
+        header: "Status",
         cell: ({ row }) => {
-            const url = '/usage?source=api&api_key=' + row.original.id;
+            const status = row.original.status
             return (
-                <Link
-                    to={url}
-                    className="flex flex-row items-center gap-1"
-                >
-                    <HugeiconsIcon icon={ArrowUpRight01Icon} size={18} /> View
-                </Link>
+                <Badge variant={status === 'active' ? 'outline' : 'secondary'}>
+                    {status}
+                </Badge>
             )
         }
     },
     {
-        accessorKey: "action",
+        accessorKey: "created_at",
+        header: "Created",
+        cell: ({ row }) => {
+            try {
+                return format(new Date(row.original.created_at), "MMM d, yyyy")
+            } catch (e) {
+                return row.original.created_at
+            }
+        }
+    },
+    {
+        id: "actions",
         header: "",
         cell: ({ row }) => {
             const api_key_id = row.original.id;
             return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" iconOnly>
-                            <HugeiconsIcon icon={MoreHorizontalIcon} />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => { console.log("Rename", api_key_id) }}>
-                            Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => { console.log("Delete", api_key_id) }}>
-                            Delete
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="text-right">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" iconOnly>
+                                <HugeiconsIcon icon={MoreHorizontalIcon} />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40">
+                            <DropdownMenuItem onClick={() => onRotate(api_key_id)} className="gap-2">
+                                <HugeiconsIcon icon={Refresh01Icon} size={16} />
+                                Rotate Key
+                            </DropdownMenuItem>
+                            {!row.original.is_default && (
+                                <DropdownMenuItem 
+                                    onClick={() => onDelete(api_key_id)} 
+                                    className="gap-2 text-destructive focus:text-destructive"
+                                >
+                                    <HugeiconsIcon icon={Delete02Icon} size={16} />
+                                    Revoke Key
+                                </DropdownMenuItem>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
             )
         },
-    },
-]
-
-export const data: ApiKey[] = [
-    {
-        id: "1c94ec4a-2a93-4308-b39b-d6bcd0246223",
-        name: "API Key 1",
-        key: "[ENCRYPTION_KEY]",
-        created: "2022-01-01"
-    },
-    {
-        id: "1c94ec4b-2a93-4308-b39b-d6bcd0246223",
-        name: "API Key 2",
-        key: "[ENCRYPTION_KEY]",
-        created: "2022-01-01"
-    },
-    {
-        id: "1c94ec4c-2a93-4308-b39b-d6bcd0246223",
-        name: "API Key 3",
-        key: "[ENCRYPTION_KEY]",
-        created: "2022-01-01"
-    },
-    {
-        id: "1c94ec4d-2a93-4308-b39b-d6bcd0246223",
-        name: "API Key 4",
-        key: "[ENCRYPTION_KEY]",
-        created: "2022-01-01"
-    },
-    {
-        id: "1c94ec4e-2a93-4308-b39b-d6bcd0246223",
-        name: "API Key 5",
-        key: "[ENCRYPTION_KEY]",
-        created: "2022-01-01"
     },
 ]

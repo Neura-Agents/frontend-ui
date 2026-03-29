@@ -59,6 +59,7 @@ export const executionService = {
         const decoder = new TextDecoder();
         let buffer = '';
 
+        let currentEvent: string | null = null;
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
@@ -68,16 +69,15 @@ export const executionService = {
             const lines = buffer.split('\n');
             buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
 
-            let currentEvent: string | null = null;
             for (const line of lines) {
                 if (line.startsWith('event:')) {
-                    // Note: Backend adds TWO spaces after event:
-                    currentEvent = line.replace('event:  ', '').trim();
+                    currentEvent = line.substring(6).trim();
                 } else if (line.startsWith('data:')) {
-                    const dataStr = line.replace('data:', '').trim();
+                    const dataStr = line.substring(5).trim();
                     if (dataStr && currentEvent) {
                         try {
-                            const data = JSON.parse(dataStr);
+                            const jsonResponse = JSON.parse(dataStr);
+                            const data = jsonResponse.result !== undefined ? jsonResponse.result : jsonResponse.error;
                             onEvent({ type: currentEvent, data });
                         } catch (e) {
                             console.error('Failed to parse SSE data:', e, dataStr);
