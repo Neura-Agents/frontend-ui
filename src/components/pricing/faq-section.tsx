@@ -41,70 +41,7 @@ const FAQItem: React.FC<FAQItemProps> = ({ question, answer }) => {
     );
 };
 
-export const FAQSection: React.FC = () => {
-    const faqs = [
-        {
-            question: "How do credits work?",
-            answer: "Credits are the currency of our platform. You can purchase them on a pay-as-you-go basis or receive them as part of a recurring plan. One credit typically equates to one API request, depending on the model used."
-        },
-        {
-            question: "Do my credits expire?",
-            answer: "No, credits purchased on the platform never expire. Use them whenever you need, whether that's today or a year from now."
-        },
-        {
-            question: "Can I upgrade my plan at any time?",
-            answer: "Yes, you can upgrade or downgrade your plan at any time through your billing dashboard. Changes are applied immediately."
-        },
-        {
-            question: "Is there a limit to how many credits I can buy?",
-            answer: "There are no hard limits. For high-volume enterprise needs, please contact our support team for custom volume discounts."
-        },
-        {
-            question: "What happens if I run out of credits?",
-            answer: "If your balance reaches zero, API requests will be paused until you add more credits. We recommend setting up auto-recharge for mission-critical applications."
-        },
-        {
-            question: "How do credits work?",
-            answer: "Credits are the currency of our platform. You can purchase them on a pay-as-you-go basis or receive them as part of a recurring plan. One credit typically equates to one API request, depending on the model used."
-        },
-        {
-            question: "Do my credits expire?",
-            answer: "No, credits purchased on the platform never expire. Use them whenever you need, whether that's today or a year from now."
-        },
-        {
-            question: "Can I upgrade my plan at any time?",
-            answer: "Yes, you can upgrade or downgrade your plan at any time through your billing dashboard. Changes are applied immediately."
-        },
-        {
-            question: "Is there a limit to how many credits I can buy?",
-            answer: "There are no hard limits. For high-volume enterprise needs, please contact our support team for custom volume discounts."
-        },
-        {
-            question: "What happens if I run out of credits?",
-            answer: "If your balance reaches zero, API requests will be paused until you add more credits. We recommend setting up auto-recharge for mission-critical applications."
-        },
-        {
-            question: "How do credits work?",
-            answer: "Credits are the currency of our platform. You can purchase them on a pay-as-you-go basis or receive them as part of a recurring plan. One credit typically equates to one API request, depending on the model used."
-        },
-        {
-            question: "Do my credits expire?",
-            answer: "No, credits purchased on the platform never expire. Use them whenever you need, whether that's today or a year from now."
-        },
-        {
-            question: "Can I upgrade my plan at any time?",
-            answer: "Yes, you can upgrade or downgrade your plan at any time through your billing dashboard. Changes are applied immediately."
-        },
-        {
-            question: "Is there a limit to how many credits I can buy?",
-            answer: "There are no hard limits. For high-volume enterprise needs, please contact our support team for custom volume discounts."
-        },
-        {
-            question: "What happens if I run out of credits?",
-            answer: "If your balance reaches zero, API requests will be paused until you add more credits. We recommend setting up auto-recharge for mission-critical applications."
-        }
-    ];
-
+export const FAQSection: React.FC<{ items?: FAQItemProps[] }> = ({ items = [] }) => {
     return (
         <div className="flex flex-col lg:flex-row lg:gap-32 gap-12 px-4 relative">
             <div className="lg:w-1/3 text-center lg:text-left lg:sticky lg:top-0 h-fit">
@@ -114,7 +51,7 @@ export const FAQSection: React.FC = () => {
             </div>
             <div className="flex-1">
                 <div className="divide-y divide-border/50">
-                    {faqs.map((faq, index) => (
+                    {items.map((faq, index) => (
                         <FAQItem key={index} {...faq} />
                     ))}
                 </div>

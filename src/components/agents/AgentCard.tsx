@@ -69,61 +69,62 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onDelete }) => {
                             </CardTitle>
                         </div>
                         <div className="flex items-center gap-1.5 font-medium text-foreground mr-1">
-                            {isOwner && (
-                                <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Link to={`/agent-chat/${agent.slug}`}>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
-                                                >
-                                                    <HugeiconsIcon icon={Chat01Icon} size={14} />
-                                                </Button>
-                                            </Link>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Chat with Agent</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Link to={`/agent-edit/${agent.id}`} onClick={(e) => e.stopPropagation()}>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
-                                                >
-                                                    <HugeiconsIcon icon={PencilEdit02Icon} size={14} />
-                                                </Button>
-                                            </Link>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            <p>Edit Agent</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-
-                                    {onDelete && (
+                            <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Link to={`/agent-chat/${agent.slug}`}>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
+                                            >
+                                                <HugeiconsIcon icon={Chat01Icon} size={14} />
+                                            </Button>
+                                        </Link>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        <p>Chat with Agent</p>
+                                    </TooltipContent>
+                                </Tooltip>
+                                {isOwner && (
+                                    <>
                                         <Tooltip>
                                             <TooltipTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-7 w-7 rounded-full hover:bg-destructive/20 hover:text-destructive"
-                                                    onClick={(e) => onDelete(agent.id, e)}
-                                                >
-                                                    <HugeiconsIcon icon={Delete02Icon} size={14} />
-                                                </Button>
+                                                <Link to={`/agent-edit/${agent.id}`} onClick={(e) => e.stopPropagation()}>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
+                                                    >
+                                                        <HugeiconsIcon icon={PencilEdit02Icon} size={14} />
+                                                    </Button>
+                                                </Link>
                                             </TooltipTrigger>
                                             <TooltipContent>
-                                                <p>Delete Agent</p>
+                                                <p>Edit Agent</p>
                                             </TooltipContent>
                                         </Tooltip>
-                                    )}
-                                </div>
-                            )}
+
+                                        {onDelete && (
+                                            <Tooltip>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-7 w-7 rounded-full hover:bg-destructive/20 hover:text-destructive"
+                                                        onClick={(e) => onDelete(agent.id, e)}
+                                                    >
+                                                        <HugeiconsIcon icon={Delete02Icon} size={14} />
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                <TooltipContent>
+                                                    <p>Delete Agent</p>
+                                                </TooltipContent>
+                                            </Tooltip>
+                                        )}
+                                    </>
+                                )}
+                            </div>
                         </div>
                     </div>
                     <CardDescription className="line-clamp-2 min-h-[40px] text-sm leading-relaxed">

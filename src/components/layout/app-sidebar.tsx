@@ -11,27 +11,29 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar"
 import { HugeiconsIcon } from '@hugeicons/react';
-import {
-    UserIcon,
-    Logout01Icon,
-    Add01Icon,
+import { 
+    Home09Icon, 
+    AiScanIcon, 
+    Add01Icon, 
+    McpServerFreeIcons, 
+    ToolsIcon, 
+    BrainIcon, 
+    AiNetworkIcon, 
+    KeyIcon, 
+    PieChartIcon, 
+    Wallet03Icon, 
+    Invoice01Icon, 
+    BrandfetchIcon, 
+    UserIcon, 
+    Settings01Icon, 
+    File01Icon,
+    Refresh01Icon as LoadingIcon,
+    InformationCircleIcon,
     Search02Icon,
-    BrandfetchIcon,
-    KeyIcon,
-    PieChartIcon,
-    PaintBoardIcon,
-    Settings01Icon,
-    Wallet03Icon,
-    Invoice01Icon,
-    McpServerFreeIcons,
-    ToolsIcon,
-    BrainIcon,
-    AiNetworkIcon,
+    Logout01Icon,
     ArrowDown01Icon,
-    AiScanIcon,
-    Home09Icon,
-    File01Icon
-} from '@hugeicons/core-free-icons';
+    PaintBoardIcon
+} from "@hugeicons/core-free-icons";
 import { useAuth } from "@/context/AuthContext";
 import { Link, useLocation } from "react-router-dom";
 import { Button } from "../ui/button";
@@ -61,11 +63,29 @@ import { agentsService } from "@/services/agentsService";
 import { toolsService } from "@/services/toolsService";
 import { mcpService } from "@/services/mcpService";
 import { knowledgeService } from "@/services/knowledgeService";
+import { platformService } from "@/services/platformService";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useCallback } from "react";
-import {
-    Refresh01Icon as LoadingIcon
-} from "@hugeicons/core-free-icons";
+
+const ICON_MAP: Record<string, any> = {
+    'Home09Icon': Home09Icon,
+    'InformationCircleIcon': InformationCircleIcon,
+    'Wallet03Icon': Wallet03Icon,
+    'AiScanIcon': AiScanIcon,
+    'Add01Icon': Add01Icon,
+    'Search02Icon': Search02Icon,
+    'McpServerFreeIcons': McpServerFreeIcons,
+    'ToolsIcon': ToolsIcon,
+    'BrainIcon': BrainIcon,
+    'AiNetworkIcon': AiNetworkIcon,
+    'KeyIcon': KeyIcon,
+    'PieChartIcon': PieChartIcon,
+    'Invoice01Icon': Invoice01Icon,
+    'BrandfetchIcon': BrandfetchIcon,
+    'UserIcon': UserIcon,
+    'Settings01Icon': Settings01Icon,
+    'File01Icon': File01Icon
+};
 
 interface MaybeTooltipProps {
     children: React.ReactNode;
@@ -109,6 +129,22 @@ export function AppSidebar() {
         kb: [],
         kg: []
     });
+    const [navGroups, setNavGroups] = useState<any[]>([]);
+    const [isLoadingNav, setIsLoadingNav] = useState(true);
+
+    useEffect(() => {
+        const fetchNav = async () => {
+            try {
+                const data = await platformService.getNavigation();
+                setNavGroups(data.sidebar);
+            } catch (error) {
+                console.error("Failed to fetch navigation:", error);
+            } finally {
+                setIsLoadingNav(false);
+            }
+        };
+        fetchNav();
+    }, []);
 
     const toggleGroup = (label: string) => {
         setCollapsedGroups(prev =>
@@ -160,57 +196,38 @@ export function AppSidebar() {
         setSearchValue("");
         navigate(q ? `${url}?q=${encodeURIComponent(q)}` : url);
     };
-    // Menu items grouped by category
-    const groupedNavItems = [
-        {
-            label: "", // Home doesn't need a category label
-            collapsible: false,
-            items: [
-                { title: "Home", url: "/", icon: Home09Icon },
-            ]
-        },
-        {
-            label: "Playground",
-            collapsible: false,
-            items: [
-                { title: "Agents", url: "/agents", icon: AiScanIcon },
-                { title: "Create Agent", url: "/agent-create", icon: Add01Icon },
-                { title: "Search", onClick: () => setOpen(true), icon: Search02Icon },
-            ]
-        },
 
-        {
-            label: "Capabilities",
-            collapsible: true,
-            items: [
-                { title: "MCP", url: "/mcp", icon: McpServerFreeIcons },
-                { title: "Tools", url: "/tools", icon: ToolsIcon },
-                { title: "Knowledge Base", url: "/knowledge-base", icon: BrainIcon },
-                { title: "Knowledge Graph", url: "/knowledge-graph", icon: AiNetworkIcon },
-            ]
-        },
-        {
-            label: "Developers",
-            collapsible: true,
-            items: [
-                { title: "API Keys", url: "/api-keys-management", icon: KeyIcon },
-                { title: "Usage", url: "/usage", icon: PieChartIcon },
-                { title: "Pricing", url: "/pricing", icon: Wallet03Icon },
-                { title: "Billing", url: "/billing", icon: Invoice01Icon },
-            ]
-        },
-        ...(hasRole('platform-admin') ? [{
-            label: "Platform Admin",
-            collapsible: true,
-            items: [
-                { title: "Design System", url: "/design-system", icon: BrandfetchIcon },
-                { title: "Users", url: "/users", icon: UserIcon },
-                { title: "Platform Features", url: "/platform-features", icon: Settings01Icon },
-                { title: "Platform Roles", url: "/platform-roles", icon: AiNetworkIcon },
-                { title: "System Prompts", url: "/platform-prompts", icon: File01Icon }
-            ]
-        }] : [])
-    ];
+    // Map the API data into the format expected by the UI, injecting the Search button if needed
+    const groupedNavItems = navGroups.map(group => {
+        // Filter items based on user roles
+        const filteredItems = group.items.filter((item: any) => {
+            if (!item.role) return true;
+            return hasRole(item.role);
+        });
+
+        if (filteredItems.length === 0) return null;
+
+        // Map icon strings to Hugeicons components and handle Search injection
+        const mappedItems = filteredItems.map((item: any) => ({
+            title: item.title,
+            url: item.url,
+            icon: ICON_MAP[item.icon] || Home09Icon
+        }));
+
+        // Special case: Add the Search button to the Playground category
+        if (group.label === "Playground") {
+            mappedItems.push({
+                title: "Search",
+                onClick: () => setOpen(true),
+                icon: Search02Icon
+            } as any);
+        }
+
+        return {
+            ...group,
+            items: mappedItems
+        };
+    }).filter(Boolean);
 
     return (
         <>
@@ -225,12 +242,21 @@ export function AppSidebar() {
                 </SidebarHeader>
 
                 <SidebarContent className="py-2">
-                    {groupedNavItems.map((group, index) => {
+                    {isLoadingNav ? (
+                        <div className="flex items-center justify-center py-10">
+                            <motion.div
+                                animate={{ rotate: 360 }}
+                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                            >
+                                <HugeiconsIcon icon={LoadingIcon} size={20} className="text-muted-foreground" />
+                            </motion.div>
+                        </div>
+                    ) : groupedNavItems.map((group: any, index: number) => {
                         const isCollapsed = collapsedGroups.includes(group.label);
                         const isCollapsible = group.collapsible !== false;
 
                         return (
-                            <SidebarGroup key={group.label || index} className="py-1">
+                            <SidebarGroup key={`${group.label}-${index}`} className="py-2">
                                 {group.label && (
                                     <SidebarGroupLabel
                                         className={cn(
@@ -262,7 +288,7 @@ export function AppSidebar() {
                                         >
                                             <SidebarGroupContent>
                                                 <SidebarMenu>
-                                                    {group.items.map((item) => {
+                                                    {group.items.map((item: any) => {
                                                         const Content = (
                                                             <div className={cn(
                                                                 "flex items-center w-full",

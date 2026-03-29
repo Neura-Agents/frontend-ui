@@ -107,5 +107,14 @@ export const platformService = {
     getPromptTypes: async (): Promise<{ id: string, name: string, description: string }[]> => {
         const response = await apiClient.get(`${API_BASE_URL}/prompts/types`);
         return response.data.types;
+    },
+
+    getNavigation: async (): Promise<{ sidebar: any[], all_urls: any[] }> => {
+        const response = await apiClient.get(`${API_BASE_URL}/navigation`);
+        return response.data;
+    },
+    getPricing: async (): Promise<{ plans: any[], faqs: any[] }> => {
+        const response = await apiClient.get(`${API_BASE_URL}/pricing`);
+        return response.data.data;
     }
 };

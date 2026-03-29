@@ -1,82 +1,45 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Typography } from '@/components/ui/typography';
 import { PricingCard, type PricingCardProps } from '@/components/pricing/pricing-card';
 import { FAQSection } from '@/components/pricing/faq-section';
 import { useAuth } from '@/context/AuthContext';
-import { useState } from 'react';
 import Footer from '@/components/landingPage/footer';
 import AboutSpacer from '@/components/aboutUs/AboutSpacer';
+import { platformService } from '@/services/platformService';
 
-const pricingData: PricingCardProps[] = [
+const fallbackPricingData: PricingCardProps[] = [
     {
         category: 'Starter',
         title: 'Pay as you go',
         buttonText: 'Get Started',
         buttonVariant: 'outline',
-        features: [
-            {
-                text: 'No Bonus Credits',
-                subtext: 'Standard rate applies',
-            },
-            {
-                text: 'Full API Access',
-                subtext: 'Access to all models',
-            },
-            {
-                text: 'Community Support',
-                subtext: '24/7 access to docs',
-            }
-        ]
-    },
-    {
-        category: 'Pro',
-        title: '$49 / month',
-        buttonText: 'Upgrade to Pro',
-        buttonVariant: 'default',
-        features: [
-            {
-                text: '5000 Bonus Credits',
-                subtext: 'Monthly recurring',
-            },
-            {
-                text: 'Priority API Access',
-                subtext: 'Higher rate limits',
-            },
-            {
-                text: 'Premium Support',
-                subtext: 'Direct email support',
-            }
-        ]
-    },
-    {
-        category: 'Business',
-        title: '$200 / month',
-        buttonText: 'Upgrade to Business',
-        buttonVariant: 'default',
-        features: [
-            {
-                text: '25000 Bonus Credits',
-                subtext: 'Monthly recurring',
-            },
-            {
-                text: 'Priority API Access',
-                subtext: 'Higher rate limits',
-            },
-            {
-                text: 'Premium Support',
-                subtext: 'Direct email support',
-            },
-            {
-                text: 'Advanced Analytics',
-                subtext: 'Real-time usage tracking',
-            }
-        ]
+        features: [{ text: 'No Bonus Credits', subtext: 'Standard rate applies' }]
     }
 ];
 
 const PricingPage: React.FC = () => {
     const { user } = useAuth();
     const [showFooterGlow, setShowFooterGlow] = useState(false);
+    const [plans, setPlans] = useState<PricingCardProps[]>([]);
+    const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchPricingData = async () => {
+            try {
+                const data = await platformService.getPricing();
+                setPlans(data.plans);
+                setFaqs(data.faqs);
+            } catch (error) {
+                console.error('Failed to fetch pricing:', error);
+                setPlans(fallbackPricingData);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchPricingData();
+    }, []);
 
     const PricingContent = (
         <div className={`container mx-auto max-w-7xl animate-in fade-in duration-700 space-y-6 ${user ? 'pt-32 md:pt-0 pb-12' : 'pt-24'}`}>
@@ -115,14 +78,20 @@ const PricingPage: React.FC = () => {
                 </div>
 
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center pb-12'>
-                    {pricingData.map((data, index) => (
-                        <PricingCard key={index} {...data} />
-                    ))}
+                    {loading ? (
+                        <div className="col-span-full py-20 text-center opacity-50">
+                            <Typography>Loading plans...</Typography>
+                        </div>
+                    ) : (
+                        plans.map((data, index) => (
+                            <PricingCard key={index} {...data} />
+                        ))
+                    )}
                 </div>
             </div>
 
             <section className="pb-12 pt-12">
-                <FAQSection />
+                <FAQSection items={faqs} />
             </section>
         </div>
     );
