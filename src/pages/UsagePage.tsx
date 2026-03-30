@@ -32,6 +32,16 @@ import { DataTable } from '@/tables/usage/data-table';
 import { RequestsChart } from '@/charts/usage/requests';
 import { SpendTrendsChart } from '@/charts/usage/spend-trends';
 
+const CURRENCIES = [
+    { code: 'USD', symbol: '$', label: 'US Dollar' },
+    { code: 'INR', symbol: '₹', label: 'Indian Rupee' },
+    { code: 'EUR', symbol: '€', label: 'Euro' },
+    { code: 'GBP', symbol: '£', label: 'British Pound' },
+    { code: 'JPY', symbol: '¥', label: 'Japanese Yen' },
+    { code: 'CAD', symbol: 'C$', label: 'Canadian Dollar' },
+    { code: 'AUD', symbol: 'A$', label: 'Australian Dollar' },
+];
+
 const UsagePage: React.FC = () => {
     const isMobile = useIsMobile();
     const [searchParams, setSearchParams] = useSearchParams();
@@ -45,6 +55,16 @@ const UsagePage: React.FC = () => {
     const [pageSize] = React.useState(10);
     const [searchQuery, setSearchQuery] = React.useState(searchParams.get('q') || '');
     const [debouncedSearch, setDebouncedSearch] = React.useState(searchParams.get('q') || '');
+    const [currency, setCurrency] = React.useState('USD');
+    const [exchangeRates, setExchangeRates] = React.useState<Record<string, number>>({
+        USD: 1,
+        INR: 83.50,
+        EUR: 0.92,
+        GBP: 0.79,
+        JPY: 151.70,
+        CAD: 1.35,
+        AUD: 1.52,
+    });
 
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
@@ -108,6 +128,21 @@ const UsagePage: React.FC = () => {
             setLoading(false);
         }
     }, [agent, apiKey, date, page, pageSize, debouncedSearch]);
+
+    React.useEffect(() => {
+        const fetchRates = async () => {
+            try {
+                const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                const data = await res.json();
+                if (data && data.rates) {
+                    setExchangeRates(prev => ({ ...prev, ...data.rates }));
+                }
+            } catch (error) {
+                console.error('Failed to fetch exchange rates:', error);
+            }
+        };
+        fetchRates();
+    }, []);
 
     React.useEffect(() => {
         const timer = setTimeout(() => {
@@ -277,18 +312,38 @@ const UsagePage: React.FC = () => {
 
                 {/* ─── METRICS ─── */}
                 <section className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                    <Card className='border-border shadow-sm w-full'>
-                        <CardHeader className="pb-2">
+                    <Card className='border-border shadow-sm w-full overflow-hidden'>
+                        <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-sm font-medium text-muted-foreground">
                                 Total Spend
                             </CardTitle>
+                            <Select value={currency} onValueChange={(val) => setCurrency(val)}>
+                                <SelectTrigger className="h-8 w-[100px] rounded-full border border-border px-3">
+                                    <SelectValue placeholder="USD" />
+                                </SelectTrigger>
+                                <SelectContent className='rounded-xl'>
+                                    {CURRENCIES.map(curr => (
+                                        <SelectItem key={curr.code} value={curr.code} className='rounded-lg'>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-muted-foreground w-4">{curr.symbol}</span>
+                                                <span>{curr.code}</span>
+                                            </div>
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
                         </CardHeader>
                         <CardContent>
                             <Typography scale='xl' weight='bold' className="tracking-tight">
-                                ${totalCost.toFixed(4)}
+                                {new Intl.NumberFormat('en-US', {
+                                    style: 'currency',
+                                    currency: currency,
+                                    minimumFractionDigits: currency === 'USD' || currency === 'EUR' || currency === 'GBP' ? 4 : 2,
+                                }).format(totalCost * (exchangeRates[currency] || 1))}
                             </Typography>
-                            <Typography scale='xs' className="mt-1 text-muted-foreground">
-                                Estimated total cost
+                            <Typography scale='xs' className="mt-1 text-muted-foreground flex items-center gap-1.5">
+                                <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                                Estimated total cost in {CURRENCIES.find(c => c.code === currency)?.label}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -332,7 +387,7 @@ const UsagePage: React.FC = () => {
                         </div>
                     ) : (
                         <div className="space-y-4">
-                            <DataTable columns={columns} data={usageData} />
+                            <DataTable columns={columns} data={usageData} meta={{ currency, exchangeRates }} />
                             {totalItems > 0 && (
                                 <Pagination
                                     currentPage={page}
@@ -346,7 +401,7 @@ const UsagePage: React.FC = () => {
 
                 {/* ─── CHARTS ─── */}
                 <section className='grid lg:grid-cols-2 grid-cols-1 gap-6'>
-                    <SpendTrendsChart data={chartData} dateRange={date} />
+                    <SpendTrendsChart data={chartData} dateRange={date} currency={currency} rate={exchangeRates[currency] || 1} />
                     <RequestsChart data={chartData} dateRange={date} />
                 </section>
 

@@ -26,9 +26,11 @@ const chartConfig = {
 interface SpendTrendsChartProps {
     data: Usage[];
     dateRange?: DateRange;
+    currency?: string;
+    rate?: number;
 }
 
-export function SpendTrendsChart({ data, dateRange }: SpendTrendsChartProps) {
+export function SpendTrendsChart({ data, dateRange, currency = 'USD', rate = 1 }: SpendTrendsChartProps) {
     // Process data to aggregate spend per day, filling with 0s for missing days
     const aggregatedData = React.useMemo(() => {
         const dailySpends: Record<string, number> = {};
@@ -36,7 +38,7 @@ export function SpendTrendsChart({ data, dateRange }: SpendTrendsChartProps) {
         // 1. Map existing data
         data.forEach(item => {
             const dateStr = format(new Date(item.created_at), 'yyyy-MM-dd');
-            dailySpends[dateStr] = (dailySpends[dateStr] || 0) + (Number(item.total_cost) || 0);
+            dailySpends[dateStr] = (dailySpends[dateStr] || 0) + (Number(item.total_cost) || 0) * rate;
         });
 
         // 2. Determine range of days to fill with 0 if data missing
@@ -65,10 +67,10 @@ export function SpendTrendsChart({ data, dateRange }: SpendTrendsChartProps) {
             const dateStr = format(day, 'yyyy-MM-dd');
             return {
                 date: dateStr,
-                spend: parseFloat((dailySpends[dateStr] || 0).toFixed(4))
+                spend: parseFloat((dailySpends[dateStr] || 0).toFixed(currency === 'USD' ? 4 : 2))
             };
         });
-    }, [data, dateRange]);
+    }, [data, dateRange, rate, currency]);
 
     return (
         <Card className="border-border/40 shadow-sm">

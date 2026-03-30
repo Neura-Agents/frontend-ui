@@ -93,11 +93,22 @@ export const columns: ColumnDef<Usage>[] = [
     {
         accessorKey: 'total_cost',
         header: 'Cost',
-        cell: ({ row }) => (
-            <Typography scale="sm" weight="bold">
-                ${row.getValue<number>('total_cost').toFixed(4)}
-            </Typography>
-        ),
+        cell: ({ row, table }) => {
+            const cost = row.getValue<number>('total_cost');
+            const meta = table.options.meta as any;
+            const currency = meta?.currency || 'USD';
+            const rate = meta?.exchangeRates?.[currency] || 1;
+
+            return (
+                <Typography scale="sm" weight="bold">
+                    {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: currency,
+                        minimumFractionDigits: currency === 'USD' ? 4 : 2,
+                    }).format(cost * rate)}
+                </Typography>
+            );
+        },
     },
     {
         id: 'actions',
