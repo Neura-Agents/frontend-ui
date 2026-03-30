@@ -125,8 +125,16 @@ const KnowledgeBasePage: React.FC = () => {
             showAlert({ title: 'Success', description: 'Knowledge base created successfully', variant: 'success' });
             setIsCreateDialogOpen(false);
             fetchKnowledgeBases();
-        } catch (error) {
-            showAlert({ title: 'Error', description: 'Failed to create knowledge base', variant: 'destructive' });
+        } catch (error: any) {
+            if (error.status === 402) {
+                showAlert({ 
+                    title: 'Payment Required', 
+                    description: `Insufficient balance: ${error.message}. Please go to the Billing page to top up.`, 
+                    variant: 'destructive' 
+                });
+            } else {
+                showAlert({ title: 'Error', description: 'Failed to create knowledge base', variant: 'destructive' });
+            }
         }
     };
 
@@ -459,7 +467,18 @@ const KnowledgeBasePage: React.FC = () => {
                 description="Perform a semantic search against the ingested documents in this knowledge base."
                 onExecute={async (_name, params) => {
                     if (!testKB) return;
-                    return await knowledgeService.queryKnowledgeBase(testKB.id, params.query, params.limit);
+                    try {
+                        return await knowledgeService.queryKnowledgeBase(testKB.id, params.query, params.limit);
+                    } catch (error: any) {
+                        if (error.status === 402) {
+                            showAlert({ 
+                                title: 'Payment Required', 
+                                description: `Insufficient balance: ${error.message}. Please top up your credits to query knowledge.`, 
+                                variant: 'destructive' 
+                            });
+                        }
+                        throw error;
+                    }
                 }}
             />
         </div>

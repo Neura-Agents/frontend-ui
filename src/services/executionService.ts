@@ -25,6 +25,14 @@ export const executionService = {
         });
 
         if (!response.ok) {
+            if (response.status === 402) {
+                const errorData = await response.json();
+                throw { 
+                    status: 402, 
+                    message: errorData.message || 'Insufficient balance', 
+                    balance: errorData.balance 
+                };
+            }
             throw new Error(`Failed to trigger agent: ${response.statusText}`);
         }
 
@@ -41,6 +49,14 @@ export const executionService = {
         });
 
         if (!response.ok) {
+            if (response.status === 402) {
+                const errorData = await response.json();
+                throw { 
+                    status: 402, 
+                    message: errorData.message || 'Insufficient balance', 
+                    balance: errorData.balance 
+                };
+            }
             throw new Error(`Failed to subscribe to workflow: ${response.statusText}`);
         }
 

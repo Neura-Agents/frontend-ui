@@ -67,8 +67,16 @@ export const GraphVisualizationDialog: React.FC<GraphVisualizationDialogProps> =
             };
 
             setGraphData(formattedData);
-        } catch (error) {
-            showAlert({ title: 'Error', description: 'Failed to fetch graph data', variant: 'destructive' });
+        } catch (error: any) {
+            if (error.status === 402) {
+                showAlert({ 
+                    title: 'Payment Required', 
+                    description: `Insufficient balance: ${error.message}. Please top up your credits to visualize the graph.`, 
+                    variant: 'destructive' 
+                });
+            } else {
+                showAlert({ title: 'Error', description: 'Failed to fetch graph data', variant: 'destructive' });
+            }
         } finally {
             setIsLoading(false);
         }

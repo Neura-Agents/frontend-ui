@@ -207,9 +207,24 @@ const AgentChatPage: React.FC = () => {
                     }]);
                     setIsExecuting(true);
 
-                    await executionService.subscribeToWorkflow(activeWorkflow.workflowId, (event) => {
-                        handleExecutionEvent(assistantMsgId, event);
-                    });
+                    try {
+                        await executionService.subscribeToWorkflow(activeWorkflow.workflowId, (event) => {
+                            handleExecutionEvent(assistantMsgId, event);
+                        });
+                    } catch (error: any) {
+                        console.error('Subscription failed:', error);
+                        if (error.status === 402) {
+                            const displayMessage = `Insufficient Credits: ${error.message}. Please [top up your balance](/billing) to continue.`;
+                            setMessages(prev => prev.map(m =>
+                                m.id === assistantMsgId ? { 
+                                    ...m, 
+                                    status: 'failed', 
+                                    content: displayMessage,
+                                    blocks: [{ type: 'text', content: displayMessage }] 
+                                } : m
+                            ));
+                        }
+                    }
                 }
             } catch (error) {
                 console.error('Failed to check active workflows:', error);
@@ -256,10 +271,21 @@ const AgentChatPage: React.FC = () => {
             await executionService.triggerAgent(slug, apiMessages, (event) => {
                 handleExecutionEvent(assistantMsgId, event);
             });
-        } catch (error) {
+        } catch (error: any) {
             console.error('Execution failed:', error);
+            
+            let displayMessage = 'Workflow execution failed.';
+            if (error.status === 402) {
+                displayMessage = `Insufficient Credits: ${error.message}. Please [top up your balance](/billing) to continue.`;
+            }
+
             setMessages(prev => prev.map(m =>
-                m.id === assistantMsgId ? { ...m, status: 'failed' } : m
+                m.id === assistantMsgId ? { 
+                    ...m, 
+                    status: 'failed', 
+                    content: displayMessage,
+                    blocks: [{ type: 'text', content: displayMessage }] 
+                } : m
             ));
             setCurrentWorkflowId(null);
             setIsStopping(false);

@@ -25,3 +25,20 @@ apiClient.interceptors.request.use((config) => {
 }, (error) => {
     return Promise.reject(error);
 });
+
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (error.response?.status === 402) {
+            const errorData = error.response.data;
+            // Throw a more useful error object for 402s
+            return Promise.reject({
+                status: 402,
+                message: errorData.message || 'Insufficient balance',
+                balance: errorData.balance,
+                originalError: error
+            });
+        }
+        return Promise.reject(error);
+    }
+);

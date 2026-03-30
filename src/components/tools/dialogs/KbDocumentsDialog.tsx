@@ -160,8 +160,16 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
             if (response.workflowId) {
                 setActiveWorkflowId(response.workflowId);
             }
-        } catch (error) {
-            showAlert({ title: 'Error', description: 'Failed to upload documents', variant: 'destructive' });
+        } catch (error: any) {
+            if (error.status === 402) {
+                showAlert({ 
+                    title: 'Payment Required', 
+                    description: `Insufficient balance: ${error.message}. Please top up your credits to ingest documents.`, 
+                    variant: 'destructive' 
+                });
+            } else {
+                showAlert({ title: 'Error', description: 'Failed to upload documents', variant: 'destructive' });
+            }
         } finally {
             setIsUploading(false);
         }

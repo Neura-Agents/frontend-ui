@@ -1,12 +1,28 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Typography } from '@/components/ui/typography';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { HugeiconsIcon } from '@hugeicons/react';
-import { Plus } from '@hugeicons/core-free-icons';
+import { billingService } from '@/services/billingService';
 
 const BillingPage: React.FC = () => {
+    const [balance, setBalance] = useState<number>(0);
+    const [loading, setLoading] = useState(true);
+
+    const fetchBalance = async () => {
+        try {
+            const data = await billingService.getBalance();
+            setBalance(data.balance);
+        } catch (error) {
+            console.error('Failed to fetch balance:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchBalance();
+    }, []);
 
     return (
         <div className="container mx-auto max-w-7xl animate-in fade-in duration-700 space-y-24 pt-32 md:pt-0">
@@ -23,16 +39,16 @@ const BillingPage: React.FC = () => {
                 <Card className='flex-1'>
                     <CardHeader>
                         <CardTitle className='flex items-center justify-between'>
-                            <span className='font-season-mix font-semibold'>1000</span>
-                            <Button variant="default" className='rounded-full font-matter font-medium' size="sm" >
-                                <HugeiconsIcon icon={Plus} />Add Credits
-                            </Button>
+                            <span className='font-season-mix font-semibold'>${loading ? '...' : balance.toFixed(2)}</span>
                         </CardTitle>
                         <CardDescription>Credits Left</CardDescription>
                     </CardHeader>
                     <CardContent className='flex flex-col gap-2 pt-3'>
-                        <Progress value={25} max={100} className="w-full" />
-                        <span className='font-matter text-muted-foreground text-sm'>250 of 1000 used</span>
+                        {/* Assuming $100 as a soft limit/progress indicator for demo */}
+                        <Progress value={Math.min((balance / 100) * 100, 100)} max={100} className="w-full" />
+                        <span className='font-matter text-muted-foreground text-sm'>
+                            {balance > 0 ? `$${balance.toFixed(2)} of $100.00 Plan Limit` : '0 credits available'}
+                        </span>
                     </CardContent>
                 </Card>
                 <Card className='flex-1'>
