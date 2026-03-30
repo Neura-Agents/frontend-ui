@@ -3,7 +3,9 @@ import { apiClient } from '../api/client';
 export interface Usage {
     id: string;
     execution_id: string;
-    agent_id: string;
+    resource_id: string;
+    resource_type: string;
+    action_type: string;
     api_key?: string;
     user_id: string;
     total_input_tokens: number;
@@ -16,10 +18,18 @@ export interface Usage {
     created_at: string;
     apiKeyName?: string;
     agentName?: string;
+    resourceName?: string;
+    resource_name?: string;
+    agent_name?: string;
+    kb_name?: string;
+    kg_name?: string;
+    api_key_name?: string;
 }
 
 export interface UsageFilter {
-    agent_id?: string;
+    resource_id?: string;
+    resource_type?: string;
+    action_type?: string;
     api_key?: string;
     user_id?: string;
     execution_id?: string;
@@ -35,7 +45,9 @@ const BASE_URL = '/backend/api/platform/usage';
 export const usageService = {
     async listUsage(filter: UsageFilter = {}): Promise<{ items: Usage[], total: number }> {
         const params = new URLSearchParams();
-        if (filter.agent_id && filter.agent_id !== 'all') params.append('agent_id', filter.agent_id);
+        if (filter.resource_id && filter.resource_id !== 'all') params.append('resource_id', filter.resource_id);
+        if (filter.resource_type && filter.resource_type !== 'all') params.append('resource_type', filter.resource_type);
+        if (filter.action_type && filter.action_type !== 'all') params.append('action_type', filter.action_type);
         if (filter.api_key && filter.api_key !== 'all') params.append('api_key', filter.api_key);
         if (filter.user_id) params.append('user_id', filter.user_id);
         if (filter.execution_id) params.append('execution_id', filter.execution_id);
@@ -64,7 +76,9 @@ export const usageService = {
 
     async getUsageStats(filter: UsageFilter = {}): Promise<Usage[]> {
         const params = new URLSearchParams();
-        if (filter.agent_id && filter.agent_id !== 'all') params.append('agent_id', filter.agent_id);
+        if (filter.resource_id && filter.resource_id !== 'all') params.append('resource_id', filter.resource_id);
+        if (filter.resource_type && filter.resource_type !== 'all') params.append('resource_type', filter.resource_type);
+        if (filter.action_type && filter.action_type !== 'all') params.append('action_type', filter.action_type);
         if (filter.api_key && filter.api_key !== 'all') params.append('api_key', filter.api_key);
         if (filter.user_id) params.append('user_id', filter.user_id);
         if (filter.execution_id) params.append('execution_id', filter.execution_id);

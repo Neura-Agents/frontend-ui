@@ -68,7 +68,8 @@ const UsagePage: React.FC = () => {
 
     const fromParam = searchParams.get('from');
     const toParam = searchParams.get('to');
-    const agent = searchParams.get('agent') || 'all';
+    const resourceType = searchParams.get('type') || 'all';
+    const resourceId = searchParams.get('resource') || 'all';
     const apiKey = searchParams.get('api_key') || 'all';
 
     const [isOpen, setIsOpen] = React.useState(false);
@@ -97,8 +98,9 @@ const UsagePage: React.FC = () => {
         setLoading(true);
         try {
             const filter = {
-                agent_id: agent,
-                api_key: apiKey,
+                resource_type: resourceType !== 'all' ? resourceType : undefined,
+                resource_id: resourceId !== 'all' ? resourceId : undefined,
+                api_key: apiKey !== 'all' ? apiKey : undefined,
                 search: debouncedSearch,
                 start_time: date?.from ? startOfDay(date.from).toISOString() : undefined,
                 end_time: date?.to ? endOfDay(date.to).toISOString() : undefined,
@@ -115,11 +117,20 @@ const UsagePage: React.FC = () => {
             setTotalItems(usageResult.total);
 
             // Map usage data with Human Readable Names
-            const mappedUsage = usageResult.items.map(u => ({
-                ...u,
-                agentName: agents.agents?.find((a: any) => a.slug === u.agent_id || a.id === u.agent_id)?.name || u.agent_id,
-                apiKeyName: keys.find(k => k.id === u.api_key)?.name || (u.api_key ? 'Unknown Key' : (u.user_id ? 'Playground' : 'System'))
-            }));
+            const mappedUsage = usageResult.items.map(u => {
+                let resourceName = u.resource_id;
+                if (u.resource_type === 'agent') {
+                    resourceName = agents.agents?.find((a: any) => a.slug === u.resource_id || a.id === u.resource_id)?.name || u.resource_id;
+                }
+                // For KB/KG, we might need another service to fetch names, but for now we can fallback to ID
+                // or assume agentData might contain them if we update it.
+                
+                return {
+                    ...u,
+                    resourceName,
+                    apiKeyName: keys.find(k => k.id === u.api_key)?.name || (u.api_key ? 'Unknown Key' : (u.user_id ? 'Playground' : 'System'))
+                };
+            });
             setUsageData(mappedUsage);
             setChartData(statsResult as Usage[]);
         } catch (error) {
@@ -127,7 +138,7 @@ const UsagePage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [agent, apiKey, date, page, pageSize, debouncedSearch]);
+    }, [resourceType, resourceId, apiKey, date, page, pageSize, debouncedSearch]);
 
     React.useEffect(() => {
         const fetchRates = async () => {
@@ -195,23 +206,42 @@ const UsagePage: React.FC = () => {
                 <section className='space-y-4 mb-4'>
                     <div className='flex lg:items-center lg:justify-between justify-start flex-col lg:flex-row gap-4'>
                         <div className='flex flex-row gap-4'>
-                            <Field className="w-full max-w-xs">
-                                <Select value={agent} onValueChange={(val) => updateParams({ agent: val })}>
+                            <Field className="w-full max-w-[180px]">
+                                <Select value={resourceType} onValueChange={(val) => updateParams({ type: val, resource: 'all' })}>
                                     <SelectTrigger size='lg' className='rounded-full border border-border'>
-                                        <SelectValue placeholder="Select Agent" />
+                                        <SelectValue placeholder="Resource Type" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectGroup>
-                                            <SelectItem value="all">All Agents</SelectItem>
-                                            {agentData.map(a => (
-                                                <SelectItem key={a.id} value={a.slug || a.id}>{a.name}</SelectItem>
-                                            ))}
+                                            <SelectItem value="all">All Types</SelectItem>
+                                            <SelectItem value="agent">Agents</SelectItem>
+                                            <SelectItem value="knowledge-base">Knowledge Bases</SelectItem>
+                                            <SelectItem value="knowledge-graph">Knowledge Graphs</SelectItem>
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
                             </Field>
 
-                            <Field className="w-full max-w-xs">
+                            <Field className="w-full max-w-[220px]">
+                                <Select value={resourceId} onValueChange={(val) => updateParams({ resource: val })}>
+                                    <SelectTrigger size='lg' className='rounded-full border border-border'>
+                                        <SelectValue placeholder="Select Resource" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectGroup>
+                                            <SelectItem value="all">All Resources</SelectItem>
+                                            {resourceType === 'agent' && agentData.map(a => (
+                                                <SelectItem key={a.id} value={a.slug || a.id}>{a.name}</SelectItem>
+                                            ))}
+                                            {resourceType === 'all' && (
+                                                <SelectItem value="all" disabled>Select type first</SelectItem>
+                                            )}
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+                            </Field>
+
+                            <Field className="w-full max-w-[180px]">
                                 <Select value={apiKey} onValueChange={(val) => updateParams({ api_key: val })}>
                                     <SelectTrigger size='lg' className='rounded-full border border-border'>
                                         <SelectValue placeholder="Select API Key" />
@@ -359,7 +389,7 @@ const UsagePage: React.FC = () => {
                                 {totalRequests}
                             </Typography>
                             <Typography scale='xs' className="mt-1 text-muted-foreground">
-                                Successful agent executions
+                                Successful resource actions
                             </Typography>
                         </CardContent>
                     </Card>
