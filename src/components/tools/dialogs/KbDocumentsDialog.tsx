@@ -83,6 +83,20 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
                     setActiveWorkflowId(null);
                     if (onUploadSuccess) onUploadSuccess();
                 }
+
+                if (eventType === 'status' && data.status === 'failed') {
+                    const message = data.message || 'Workflow finished with errors';
+                    if (message.toLowerCase().includes('insufficient balance') || message.toLowerCase().includes('insufficient credits')) {
+                         showAlert({ 
+                            title: 'Payment Required', 
+                            description: `Ingestion stopped due to insufficient balance. Please top up your credits to continue.`, 
+                            variant: 'destructive' 
+                        });
+                    } else {
+                        showAlert({ title: 'Ingestion Failed', description: message, variant: 'destructive' });
+                    }
+                    setActiveWorkflowId(null);
+                }
             }
         );
 

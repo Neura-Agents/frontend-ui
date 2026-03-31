@@ -385,10 +385,20 @@ const AgentChatPage: React.FC = () => {
                         if (window.eventSource) window.eventSource.close();
                     } else if (event.type === 'Error' || event.type === 'error') {
                         newStatus = 'failed';
+                        const errorMessage = internalData.message || metadata.message || 'Unknown error occurred';
+                        
+                        if (errorMessage.toLowerCase().includes('insufficient balance') || errorMessage.toLowerCase().includes('insufficient credits')) {
+                            const helpMessage = `**Insufficient Credits**: Your balance is too low to continue this execution. Please [top up your balance](/billing) to resume.`;
+                            newContent = helpMessage;
+                            newBlocks = [{ type: 'text', content: helpMessage }];
+                        } else {
+                            newContent += `\n\n**Error**: ${errorMessage}`;
+                            newBlocks.push({ type: 'text', content: `\n\n**Error**: ${errorMessage}` });
+                        }
+
                         setCurrentWorkflowId(null);
                         setIsStopping(false);
                         setIsExecuting(false);
-                        // Proactively clear any pending tool loading states
                         newBlocks = newBlocks.map(b => 
                             b.type === 'tool_activity' ? { ...b, isLoading: false } : b
                         );
