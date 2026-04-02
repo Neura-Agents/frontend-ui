@@ -18,6 +18,7 @@ import { Refresh01Icon, Search02Icon } from '@hugeicons/core-free-icons';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 import Pagination from '@/components/ui/pagination';
 
 import { useSearchParams } from 'react-router-dom';
@@ -25,6 +26,7 @@ import { useSearchParams } from 'react-router-dom';
 import { apiKeysService } from '@/services/apiKeysService';
 import { agentsService } from '@/services/agentsService';
 import { usageService } from '@/services/usageService';
+import { knowledgeService } from '@/services/knowledgeService';
 import type { Usage } from '@/services/usageService';
 import type { ApiKey } from '@/tables/api-keys/columns';
 import { columns } from '@/tables/usage/columns';
@@ -47,6 +49,8 @@ const UsagePage: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [apiKeyData, setApiKeyData] = React.useState<ApiKey[]>([]);
     const [agentData, setAgentData] = React.useState<any[]>([]);
+    const [kbData, setKbData] = React.useState<any[]>([]);
+    const [kgData, setKgData] = React.useState<any[]>([]);
     const [usageData, setUsageData] = React.useState<Usage[]>([]);
     const [chartData, setChartData] = React.useState<Usage[]>([]);
     const [loading, setLoading] = React.useState(true);
@@ -94,43 +98,46 @@ const UsagePage: React.FC = () => {
         setSearchParams(newParams);
     }, [searchParams, setSearchParams]);
 
-    const fetchData = React.useCallback(async () => {
+    const fetchData = async (pageNum: number = page, query: string = debouncedSearch) => {
         setLoading(true);
         try {
             const filter = {
                 resource_type: resourceType !== 'all' ? resourceType : undefined,
                 resource_id: resourceId !== 'all' ? resourceId : undefined,
                 api_key: apiKey !== 'all' ? apiKey : undefined,
-                search: debouncedSearch,
+                search: query,
                 start_time: date?.from ? startOfDay(date.from).toISOString() : undefined,
                 end_time: date?.to ? endOfDay(date.to).toISOString() : undefined,
             };
 
-            const [keys, agents, usageResult, statsResult] = await Promise.all([
+            const [keys, agents, kb, kg, usageResult, statsResult] = await Promise.all([
                 apiKeysService.listKeys(),
                 agentsService.getAgents(),
-                usageService.listUsage({ ...filter, page, limit: pageSize }),
+                knowledgeService.getKnowledgeBases(),
+                knowledgeService.getKnowledgeGraphs(),
+                usageService.listUsage({ ...filter, page: pageNum, limit: pageSize }),
                 usageService.getUsageStats(filter)
             ]);
             setApiKeyData(keys);
             setAgentData(agents.agents || []);
+            setKbData(kb.items || []);
+            setKgData(kg.items || []);
             setTotalItems(usageResult.total);
+            setPage(pageNum);
 
             // Map usage data with Human Readable Names
-            const mappedUsage = usageResult.items.map(u => {
+            const mappedUsage = usageResult.items.map((u: any) => {
                 let resourceName = u.resource_id;
                 if (u.resource_type === 'agent') {
-                    resourceName = agents.agents?.find((a: any) => a.slug === u.resource_id || a.id === u.resource_id)?.name || u.resource_id;
+                    resourceName = agents.agents.find((a: any) => a.id === u.resource_id)?.name || u.resource_id;
+                } else if (u.resource_type === 'knowledge_base') {
+                    resourceName = kb.items.find((k: any) => k.id === u.resource_id)?.name || u.resource_id;
+                } else if (u.resource_type === 'knowledge_graph') {
+                    resourceName = kg.items.find((k: any) => k.id === u.resource_id)?.name || u.resource_id;
                 }
-                // For KB/KG, we might need another service to fetch names, but for now we can fallback to ID
-                // or assume agentData might contain them if we update it.
-                
-                return {
-                    ...u,
-                    resourceName,
-                    apiKeyName: keys.find(k => k.id === u.api_key)?.name || (u.api_key ? 'Unknown Key' : (u.user_id ? 'Playground' : 'System'))
-                };
+                return { ...u, resource_name: resourceName };
             });
+
             setUsageData(mappedUsage);
             setChartData(statsResult as Usage[]);
         } catch (error) {
@@ -138,39 +145,41 @@ const UsagePage: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [resourceType, resourceId, apiKey, date, page, pageSize, debouncedSearch]);
+    };
 
     React.useEffect(() => {
-        const fetchRates = async () => {
-            try {
-                const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-                const data = await res.json();
-                if (data && data.rates) {
-                    setExchangeRates(prev => ({ ...prev, ...data.rates }));
+        const timer = setTimeout(() => {
+            const fetchRates = async () => {
+                try {
+                    const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
+                    const data = await res.json();
+                    if (data && data.rates) {
+                        setExchangeRates(prev => ({ ...prev, ...data.rates }));
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch exchange rates:', error);
                 }
-            } catch (error) {
-                console.error('Failed to fetch exchange rates:', error);
-            }
-        };
-        fetchRates();
+            };
+            fetchRates();
+        }, 100);
+        return () => clearTimeout(timer);
     }, []);
 
     React.useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchQuery);
-            setPage(1);
-            if (searchQuery) {
-                updateParams({ q: searchQuery });
-            } else {
-                updateParams({ q: null });
-            }
-        }, 500);
+            fetchData(1, searchQuery);
+            
+            setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                if (searchQuery) next.set('q', searchQuery);
+                else next.delete('q');
+                if (next.toString() === prev.toString()) return prev;
+                return next;
+            }, { replace: true });
+        }, 300);
         return () => clearTimeout(timer);
-    }, [searchQuery, updateParams]);
-
-    React.useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+    }, [searchQuery]);
 
     const handleDateSelect = (range: DateRange | undefined) => {
         setDate(range);
@@ -230,12 +239,15 @@ const UsagePage: React.FC = () => {
                                     <SelectContent>
                                         <SelectGroup>
                                             <SelectItem value="all">All Resources</SelectItem>
-                                            {resourceType === 'agent' && agentData.map(a => (
+                                            {(resourceType === 'agent' || resourceType === 'all') && agentData.length > 0 && agentData.map(a => (
                                                 <SelectItem key={a.id} value={a.slug || a.id}>{a.name}</SelectItem>
                                             ))}
-                                            {resourceType === 'all' && (
-                                                <SelectItem value="all" disabled>Select type first</SelectItem>
-                                            )}
+                                            {(resourceType === 'knowledge-base' || resourceType === 'all') && kbData.length > 0 && kbData.map(k => (
+                                                <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                                            ))}
+                                            {(resourceType === 'knowledge-graph' || resourceType === 'all') && kgData.length > 0 && kgData.map(k => (
+                                                <SelectItem key={k.id} value={k.id}>{k.name}</SelectItem>
+                                            ))}
                                         </SelectGroup>
                                     </SelectContent>
                                 </Select>
@@ -330,7 +342,7 @@ const UsagePage: React.FC = () => {
                                     size="icon-lg"
                                     iconOnly
                                     className="rounded-full border-border"
-                                    onClick={fetchData}
+                                    onClick={() => fetchData()}
                                     disabled={loading}
                                 >
                                     {loading ? <Loader2 className="animate-spin size-5" /> : <HugeiconsIcon icon={Refresh01Icon} />}
@@ -364,13 +376,17 @@ const UsagePage: React.FC = () => {
                             </Select>
                         </CardHeader>
                         <CardContent>
-                            <Typography scale='xl' weight='bold' className="tracking-tight">
-                                {new Intl.NumberFormat('en-US', {
-                                    style: 'currency',
-                                    currency: currency,
-                                    minimumFractionDigits: currency === 'USD' || currency === 'EUR' || currency === 'GBP' ? 4 : 2,
-                                }).format(totalCost * (exchangeRates[currency] || 1))}
-                            </Typography>
+                            {loading ? (
+                                <Skeleton className="h-8 w-32 bg-muted/60" />
+                            ) : (
+                                <Typography scale='xl' weight='bold' className="tracking-tight">
+                                    {new Intl.NumberFormat('en-US', {
+                                        style: 'currency',
+                                        currency: currency,
+                                        minimumFractionDigits: currency === 'USD' || currency === 'EUR' || currency === 'GBP' ? 4 : 2,
+                                    }).format(totalCost * (exchangeRates[currency] || 1))}
+                                </Typography>
+                            )}
                             <Typography scale='xs' className="mt-1 text-muted-foreground flex items-center gap-1.5">
                                 <span className="flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
                                 Estimated total cost in {CURRENCIES.find(c => c.code === currency)?.label}
@@ -385,9 +401,13 @@ const UsagePage: React.FC = () => {
                             </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <Typography scale='xl' weight='bold' className="tracking-tight">
-                                {totalRequests}
-                            </Typography>
+                            {loading ? (
+                                <Skeleton className="h-8 w-20 bg-muted/60" />
+                            ) : (
+                                <Typography scale='xl' weight='bold' className="tracking-tight">
+                                    {totalRequests}
+                                </Typography>
+                            )}
                             <Typography scale='xs' className="mt-1 text-muted-foreground">
                                 Successful resource actions
                             </Typography>
@@ -411,28 +431,39 @@ const UsagePage: React.FC = () => {
                             />
                         </div>
                     </div>
-                    {loading ? (
-                        <div className="flex items-center justify-center h-64 border border-dashed rounded-xl">
-                            <Loader2 className="animate-spin text-primary" />
-                        </div>
-                    ) : (
-                        <div className="space-y-4">
-                            <DataTable columns={columns} data={usageData} meta={{ currency, exchangeRates }} />
-                            {totalItems > 0 && (
-                                <Pagination
-                                    currentPage={page}
-                                    totalPages={Math.ceil(totalItems / pageSize)}
-                                    onPageChange={setPage}
-                                />
-                            )}
-                        </div>
-                    )}
+                    <div className="space-y-4">
+                        <DataTable columns={columns} data={usageData} meta={{ currency, exchangeRates }} loading={loading} />
+                        {!loading && totalItems > 0 && (
+                            <Pagination
+                                currentPage={page}
+                                totalPages={Math.ceil(totalItems / pageSize)}
+                                onPageChange={(p) => {
+                                    setPage(p);
+                                    fetchData(p, debouncedSearch);
+                                }}
+                            />
+                        )}
+                    </div>
                 </section>
 
                 {/* ─── CHARTS ─── */}
                 <section className='grid lg:grid-cols-2 grid-cols-1 gap-6'>
-                    <SpendTrendsChart data={chartData} dateRange={date} currency={currency} rate={exchangeRates[currency] || 1} />
-                    <RequestsChart data={chartData} dateRange={date} />
+                    {loading ? (
+                        <Card className="border-border animate-pulse bg-card/30">
+                            <CardHeader><div className="h-6 w-32 bg-muted rounded" /></CardHeader>
+                            <CardContent><div className="h-[300px] w-full bg-muted/20 rounded" /></CardContent>
+                        </Card>
+                    ) : (
+                        <SpendTrendsChart data={chartData} dateRange={date} currency={currency} rate={exchangeRates[currency] || 1} />
+                    )}
+                    {loading ? (
+                        <Card className="border-border animate-pulse bg-card/30">
+                            <CardHeader><div className="h-6 w-32 bg-muted rounded" /></CardHeader>
+                            <CardContent><div className="h-[300px] w-full bg-muted/20 rounded" /></CardContent>
+                        </Card>
+                    ) : (
+                        <RequestsChart data={chartData} dateRange={date} />
+                    )}
                 </section>
 
             </div>

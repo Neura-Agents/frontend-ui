@@ -18,14 +18,20 @@ import {
     TableRow,
 } from "@/components/ui/table"
 
+import { Typography } from "@/components/ui/typography"
+import { HugeiconsIcon } from "@hugeicons/react"
+import { ApiIcon } from "@hugeicons/core-free-icons"
+
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
+    loading?: boolean
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
+    loading
 }: DataTableProps<TData, TValue>) {
     const table = useReactTable({
         data,
@@ -55,7 +61,17 @@ export function DataTable<TData, TValue>({
                     ))}
                 </TableHeader>
                 <TableBody>
-                    {table.getRowModel().rows?.length ? (
+                    {loading ? (
+                        Array.from({ length: 5 }).map((_, i) => (
+                            <TableRow key={i}>
+                                {columns.map((_, j) => (
+                                    <TableCell key={j} className="h-16">
+                                        <div className="h-4 bg-muted animate-pulse rounded w-3/4" />
+                                    </TableCell>
+                                ))}
+                            </TableRow>
+                        ))
+                    ) : table.getRowModel().rows?.length ? (
                         table.getRowModel().rows.map((row) => (
                             <TableRow
                                 key={row.id}
@@ -71,7 +87,10 @@ export function DataTable<TData, TValue>({
                     ) : (
                         <TableRow>
                             <TableCell colSpan={columns.length} className="h-24 text-center">
-                                No results.
+                                <div className="flex flex-col items-center gap-2">
+                                    <HugeiconsIcon icon={ApiIcon} size={40} className="text-muted-foreground/30" />
+                                    <Typography className="text-muted-foreground">No API keys found</Typography>
+                                </div>
                             </TableCell>
                         </TableRow>
                     )}

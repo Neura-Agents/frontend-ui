@@ -48,17 +48,20 @@ const AgentConfiguration: React.FC<AgentConfigurationProps> = ({
     const [tagInput, setTagInput] = useState("");
 
     useEffect(() => {
-        const fetchModels = async () => {
-            try {
-                const fetchedModels = await modelsService.getModels();
-                setModels(fetchedModels);
-            } catch (error) {
-                console.error("Failed to fetch models:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchModels();
+        const timer = setTimeout(() => {
+            const fetchModels = async () => {
+                try {
+                    const fetchedModels = await modelsService.getModels();
+                    setModels(fetchedModels);
+                } catch (error) {
+                    console.error("Failed to fetch models:", error);
+                } finally {
+                    setIsLoading(false);
+                }
+            };
+            fetchModels();
+        }, 100);
+        return () => clearTimeout(timer);
     }, []);
 
     // Auto-select first model if none is selected and we are NOT in edit mode (or agent load is done)

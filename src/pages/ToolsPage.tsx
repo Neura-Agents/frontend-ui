@@ -16,6 +16,8 @@ import { IconPickerDialog } from '@/components/tools/dialogs/IconPickerDialog';
 import { ConflictResolutionDialog, type ConflictItem } from '@/components/tools/dialogs/ConflictResolutionDialog';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { useAlert } from '@/context/AlertContext';
 
 const ToolsPage: React.FC = () => {
     const [tools, setTools] = useState<Tool[]>([]);
@@ -41,6 +43,7 @@ const ToolsPage: React.FC = () => {
 
     // Icon picker
     const [isIconDialogOpen, setIsIconDialogOpen] = useState(false);
+    const { showAlert } = useAlert();
 
     // Pagination / search
     const [searchParams, setSearchParams] = useSearchParams();
@@ -79,41 +82,39 @@ const ToolsPage: React.FC = () => {
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchQuery);
-            
-            // Update URL search params
-            if (searchQuery) {
-                setSearchParams({ q: searchQuery }, { replace: true });
-            } else {
-                const newParams = new URLSearchParams(searchParams);
-                newParams.delete('q');
-                setSearchParams(newParams, { replace: true });
-            }
-        }, 500);
+            fetchTools(1, searchQuery);
+
+            // Update URL search params - functional way to avoid dependency cycle
+            setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                if (searchQuery) next.set('q', searchQuery);
+                else next.delete('q');
+                if (next.toString() === prev.toString()) return prev;
+                return next;
+            }, { replace: true });
+        }, 300);
         return () => clearTimeout(timer);
-    }, [searchQuery, setSearchParams]);
+    }, [searchQuery]);
 
     // ─── Fetch ────────────────────────────────────────────────────────────────────
-    const fetchTools = async () => {
+    const fetchTools = async (pageNum: number = currentPage, query: string = debouncedSearch) => {
         try {
             setLoading(true);
             const { tools: data, total, totalPages: pages } = await toolsService.getTools(
-                currentPage,
+                pageNum,
                 pageSize,
-                debouncedSearch,
+                query,
             );
             setTools(data);
             setTotalTools(total);
             setTotalPages(pages);
+            setCurrentPage(pageNum);
         } catch {
-            setError('Failed to fetch tools from the server.');
+            showAlert({ title: 'Error', description: 'Failed to fetch tools', variant: 'destructive' });
         } finally {
             setLoading(false);
         }
     };
-
-    useEffect(() => {
-        fetchTools();
-    }, [currentPage, debouncedSearch]);
 
     // ─── File upload ──────────────────────────────────────────────────────────────
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -583,12 +584,30 @@ const ToolsPage: React.FC = () => {
             )}
 
             {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
                     {Array.from({ length: 6 }).map((_, i) => (
-                        <div
-                            key={i}
-                            className="h-40 rounded-2xl bg-muted/30 animate-pulse"
-                        />
+                        <Card key={i} className="overflow-hidden relative group border-border animate-pulse bg-card/30">
+                            <CardHeader>
+                                <div className="flex items-center justify-between mb-2">
+                                    <div className="h-7 w-1/2 bg-muted rounded" />
+                                    <div className="h-8 w-24 bg-muted/40 rounded-full" />
+                                </div>
+                                <div className="space-y-2">
+                                    <div className="h-4 w-full bg-muted/50 rounded" />
+                                    <div className="h-4 w-5/6 bg-muted/50 rounded" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="space-y-3">
+                                    <div className="h-10 w-full bg-muted/40 rounded-full" />
+                                    <div className="flex gap-2">
+                                        <div className="h-6 w-16 bg-muted/40 rounded-full" />
+                                        <div className="h-6 w-20 bg-muted/40 rounded-full" />
+                                        <div className="h-6 w-16 bg-muted/40 rounded-full" />
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
                     ))}
                 </div>
             ) : (
@@ -625,7 +644,11 @@ const ToolsPage: React.FC = () => {
                     <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
-                        onPageChange={setCurrentPage}
+                        onPageChange={(p) => {
+                            setCurrentPage(p);
+                            fetchTools(p, debouncedSearch);
+                        }}
+                        className="mt-4"
                     />
                 </div>
             )}

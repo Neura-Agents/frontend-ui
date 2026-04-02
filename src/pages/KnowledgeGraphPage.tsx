@@ -261,9 +261,23 @@ const KnowledgeGraphPage: React.FC = () => {
             {/* Content Area */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2 pb-20">
                 {isLoading ? (
-                    <div className="col-span-full py-20 text-center text-muted-foreground animate-pulse">
-                        Loading knowledge graphs...
-                    </div>
+                    Array.from({ length: 6 }).map((_, i) => (
+                        <Card key={i} className="flex flex-col h-full border-border animate-pulse bg-card/30">
+                            <CardHeader>
+                                <div className="space-y-2">
+                                    <div className="h-7 w-2/3 bg-muted rounded" />
+                                    <div className="h-4 w-full bg-muted/50 rounded" />
+                                </div>
+                            </CardHeader>
+                            <CardContent className="mt-auto space-y-4">
+                                <div className="flex flex-wrap gap-2">
+                                    <div className="h-6 w-16 bg-muted/40 rounded-full" />
+                                    <div className="h-6 w-16 bg-muted/40 rounded-full" />
+                                </div>
+                                <div className="h-10 w-full bg-muted/50 rounded-full" />
+                            </CardContent>
+                        </Card>
+                    ))
                 ) : knowledgeGraphs.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-32 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <div className="text-center space-y-2">

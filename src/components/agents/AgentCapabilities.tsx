@@ -55,45 +55,48 @@ const AgentCapabilities: React.FC<AgentCapabilitiesProps> = ({ selectedIds, setS
 
 
     useEffect(() => {
-        const fetchData = async () => {
-            setLoading(true);
-            try {
-                // Fetch Tools
-                const toolsData = await toolsService.getTools(1, 100);
-                setTools(toolsData.tools);
+        const timer = setTimeout(() => {
+            const fetchData = async () => {
+                setLoading(true);
+                try {
+                    // Fetch Tools
+                    const toolsData = await toolsService.getTools(1, 100);
+                    setTools(toolsData.tools);
 
-                // Fetch MCP Servers (Page 1, higher limit for selection)
-                const serversData = await mcpService.getServers({ page: 1, limit: 100 });
-                setMcpServers(serversData.mcp_servers);
+                    // Fetch MCP Servers (Page 1, higher limit for selection)
+                    const serversData = await mcpService.getServers({ page: 1, limit: 100 });
+                    setMcpServers(serversData.mcp_servers);
 
-                // Fetch ALL MCP Tools in one shot
-                const allTools = await mcpService.getTools();
-                const mcpToolsMap: Record<string, McpTool[]> = {};
-                
-                allTools.forEach(tool => {
-                    // Use 'default' if server_id is missing (matches sync logic)
-                    const sId = (tool as any).server_id || 'default';
-                    if (!mcpToolsMap[sId]) mcpToolsMap[sId] = [];
-                    mcpToolsMap[sId].push(tool);
-                });
-                setMcpTools(mcpToolsMap);
+                    // Fetch ALL MCP Tools in one shot
+                    const allTools = await mcpService.getTools();
+                    const mcpToolsMap: Record<string, McpTool[]> = {};
+                    
+                    allTools.forEach(tool => {
+                        // Use 'default' if server_id is missing (matches sync logic)
+                        const sId = (tool as any).server_id || 'default';
+                        if (!mcpToolsMap[sId]) mcpToolsMap[sId] = [];
+                        mcpToolsMap[sId].push(tool);
+                    });
+                    setMcpTools(mcpToolsMap);
 
 
-                // Fetch Knowledge Bases (Page 1, 100 items for selection)
-                const kbData = await knowledgeService.getKnowledgeBases({ page: 1, limit: 100 });
-                setKnowledgeBases(kbData.items);
+                    // Fetch Knowledge Bases (Page 1, 100 items for selection)
+                    const kbData = await knowledgeService.getKnowledgeBases({ page: 1, limit: 100 });
+                    setKnowledgeBases(kbData.items);
 
-                // Fetch Knowledge Graphs (Page 1, 100 items for selection)
-                const kgData = await knowledgeService.getKnowledgeGraphs({ page: 1, limit: 100 });
-                setKnowledgeGraphs(kgData.items);
-            } catch (error) {
-                console.error("Failed to fetch capabilities", error);
-            } finally {
-                setLoading(false);
-            }
-        };
+                    // Fetch Knowledge Graphs (Page 1, 100 items for selection)
+                    const kgData = await knowledgeService.getKnowledgeGraphs({ page: 1, limit: 100 });
+                    setKnowledgeGraphs(kgData.items);
+                } catch (error) {
+                    console.error("Failed to fetch capabilities", error);
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-        fetchData();
+            fetchData();
+        }, 100);
+        return () => clearTimeout(timer);
     }, []);
 
     const toggleSelection = (id: string) => {

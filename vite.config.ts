@@ -21,6 +21,13 @@ export default defineConfig({
       '/backend': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+        secure: false,
+      },
+      // Proxy agent discovery requests to Kong
+      '^/[^/]+/.well-known/agent.json': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
       }
     }
   },

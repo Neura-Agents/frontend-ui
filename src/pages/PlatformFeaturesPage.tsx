@@ -66,7 +66,10 @@ const PlatformFeaturesPage: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchFeatures();
+        const timer = setTimeout(() => {
+            fetchFeatures();
+        }, 100);
+        return () => clearTimeout(timer);
     }, []);
 
     const handleToggle = async (feature: FeatureFlag) => {
@@ -160,9 +163,7 @@ const PlatformFeaturesPage: React.FC = () => {
 
             {/* ─── CONTENT ─── */}
             <section className="px-4 md:px-0">
-                <div className={loading ? "opacity-50 pointer-events-none transition-opacity duration-300" : "transition-opacity duration-300"}>
-                    <DataTable columns={columns} data={features} />
-                </div>
+                <DataTable columns={columns} data={features} loading={loading} />
             </section>
 
             {/* ─── ADVANCED RULES DIALOG ─── */}

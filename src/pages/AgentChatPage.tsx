@@ -452,11 +452,11 @@ const AgentChatPage: React.FC = () => {
                                     size={22}
                                 />
                             </div>
-                            <div>
-                                <Typography scale="2xl" font="season-mix" weight="normal" className="tracking-tight shrink-0 whitespace-nowrap">
+                            <div className="min-w-0 flex-1">
+                                <Typography scale="2xl" font="season-mix" weight="normal" className="tracking-tight truncate">
                                     {loading ? 'Loading...' : (agent?.name || 'Agent')}
                                 </Typography>
-                                <Typography scale="sm" className="tracking-tight shrink-0 whitespace-nowrap text-muted-foreground">
+                                <Typography scale="sm" className="tracking-tight text-muted-foreground line-clamp-2">
                                     {loading ? 'Loading...' : (agent?.description || 'Agent')}
                                 </Typography>
                             </div>

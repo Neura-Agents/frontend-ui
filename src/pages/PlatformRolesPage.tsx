@@ -28,7 +28,10 @@ const PlatformRolesPage: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchRoles();
+        const timer = setTimeout(() => {
+            fetchRoles();
+        }, 100);
+        return () => clearTimeout(timer);
     }, []);
 
     return (
@@ -43,17 +46,12 @@ const PlatformRolesPage: React.FC = () => {
             </section>
 
             <div className="space-y-8 px-2">
-                <section className="px-2 pb-12">
-                    {loading ? (
-                        <div className="flex items-center justify-center h-48">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                        </div>
-                    ) : (
-                        <DataTable 
-                            columns={columns} 
-                            data={roles} 
-                        />
-                    )}
+                <section className="px-2 pb-12 transition-all duration-300">
+                    <DataTable 
+                        columns={columns} 
+                        data={roles} 
+                        loading={loading}
+                    />
                 </section>
             </div>
         </div>

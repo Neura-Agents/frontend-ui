@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Typography } from '@/components/ui/typography';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,52 +51,43 @@ const MCPPage: React.FC = () => {
 
     const { showAlert } = useAlert();
 
-    const fetchServers = useCallback(async () => {
+    const fetchServers = async (query: string = debouncedSearch, pageNum: number = page) => {
         setLoading(true);
         setError(null);
         try {
             const data = await mcpService.getServers({
-                query: debouncedSearch,
-                page,
+                query: query,
+                page: pageNum,
                 limit
             });
             setServers(data.mcp_servers);
             setTotalItems(data.total);
+            setPage(pageNum);
         } catch (err: any) {
-            setError(err.message || "Failed to fetch MCP servers");
+            setError('Failed to fetch MCP servers');
+            showAlert({ title: 'Error', description: 'Failed to fetch MCP servers', variant: 'destructive' });
         } finally {
             setLoading(false);
         }
-    }, [debouncedSearch, page, limit]);
-
-    useEffect(() => {
-        fetchServers();
-    }, [fetchServers]);
+    };
 
     // Handle search debounce and URL sync
     useEffect(() => {
-        const queryFromUrl = searchParams.get('q') || '';
-        if (queryFromUrl !== searchQuery) {
-            setSearchQuery(queryFromUrl);
-        }
-    }, [searchParams]);
-
-    useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchQuery);
-            setPage(1); // Reset to first page on search
-            
-            // Update URL search params
-            if (searchQuery) {
-                setSearchParams({ q: searchQuery }, { replace: true });
-            } else {
-                const newParams = new URLSearchParams(searchParams);
-                newParams.delete('q');
-                setSearchParams(newParams, { replace: true });
-            }
-        }, 500);
+            fetchServers(searchQuery, 1);
+
+            // Functional update to avoid dependency on searchParams object itself
+            setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                if (searchQuery) next.set('q', searchQuery);
+                else next.delete('q');
+                if (next.toString() === prev.toString()) return prev;
+                return next;
+            }, { replace: true });
+        }, 300);
         return () => clearTimeout(timer);
-    }, [searchQuery, setSearchParams]);
+    }, [searchQuery]);
 
     const handleExploreTools = async (server: McpServer) => {
         setSelectedServer(server);
@@ -233,21 +224,36 @@ const MCPPage: React.FC = () => {
 
             {
                 loading ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2" >
-                        {
-                            [1, 2, 3].map(i => (
-                                <Card key={i} className="animate-pulse bg-card border-border/60">
-                                    <CardHeader className="h-24 bg-muted/20"></CardHeader>
-                                    <CardContent className="h-40"></CardContent>
-                                </Card>
-                            ))
-                        }
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                            <Card key={i} className="flex flex-col h-full border-border animate-pulse bg-card/30">
+                                <CardHeader>
+                                    <div className="flex items-start justify-between">
+                                        <div className="space-y-2 w-full">
+                                            <div className="h-7 w-1/2 bg-muted rounded" />
+                                            <div className="h-4 w-full bg-muted/50 rounded" />
+                                        </div>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="mt-auto space-y-4">
+                                    <div className="space-y-2">
+                                        <div className="h-3 w-16 bg-muted/40 rounded" />
+                                        <div className="h-10 w-full bg-muted/30 rounded" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="h-3 w-20 bg-muted/40 rounded" />
+                                        <div className="h-10 w-full bg-muted/30 rounded" />
+                                    </div>
+                                    <div className="h-10 w-full bg-muted/50 rounded-full" />
+                                </CardContent>
+                            </Card>
+                        ))}
                     </div>
                 ) : error ? (
                     <div className="p-10 border border-destructive/20 rounded-xl flex flex-col items-center justify-center bg-destructive/5 space-y-4">
                         <HugeiconsIcon icon={Alert01Icon} className="text-destructive size-10" />
                         <Typography className="text-destructive font-medium">{error}</Typography>
-                        <Button variant="outline" onClick={fetchServers}>Try Again</Button>
+                        <Button variant="outline" onClick={() => fetchServers()}>Try Again</Button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2 pb-20">
@@ -362,7 +368,10 @@ const MCPPage: React.FC = () => {
                     <Pagination
                         currentPage={page}
                         totalPages={Math.ceil(totalItems / limit)}
-                        onPageChange={setPage}
+                        onPageChange={(p) => {
+                            setPage(p);
+                            fetchServers(debouncedSearch, p);
+                        }}
                     />
                 </div>
             )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Typography } from '@/components/ui/typography';
 import { Button } from '@/components/ui/button';
 import { HugeiconsIcon } from '@hugeicons/react';
@@ -15,6 +15,9 @@ import { Badge } from '@/components/ui/badge';
 import Pagination from '@/components/ui/pagination';
 
 
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+
+
 const AgentsPage: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [agents, setAgents] = useState<Agent[]>([]);
@@ -25,22 +28,23 @@ const AgentsPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [debouncedSearch, setDebouncedSearch] = useState(searchParams.get('q') || '');
 
-    const fetchAgents = useCallback(async () => {
+    const fetchAgents = async (query: string = debouncedSearch, pageNum: number = page) => {
         setLoading(true);
         try {
             const data = await agentsService.getAgents({
-                query: debouncedSearch,
-                page,
+                query: query,
+                page: pageNum,
                 limit
             });
             setAgents(data.agents);
             setTotalItems(data.total);
+            setPage(pageNum);
         } catch (error) {
             console.error("Failed to fetch agents:", error);
         } finally {
             setLoading(false);
         }
-    }, [debouncedSearch, page, limit]);
+    };
 
     const handleDeleteAgent = async (id: string, e: React.MouseEvent) => {
         e.preventDefault();
@@ -57,34 +61,25 @@ const AgentsPage: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        fetchAgents();
-    }, [fetchAgents]);
+
 
     // Handle search debounce and URL sync
     useEffect(() => {
-        const queryFromUrl = searchParams.get('q') || '';
-        if (queryFromUrl !== searchQuery) {
-            setSearchQuery(queryFromUrl);
-        }
-    }, [searchParams]);
-
-    useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchQuery);
-            setPage(1); // Reset to first page on search
+            fetchAgents(searchQuery, 1);
 
-            // Update URL search params
-            if (searchQuery) {
-                setSearchParams({ q: searchQuery }, { replace: true });
-            } else {
-                const newParams = new URLSearchParams(searchParams);
-                newParams.delete('q');
-                setSearchParams(newParams, { replace: true });
-            }
-        }, 500);
+            // Update URL search params - functional way to avoid dependency on searchParams object itself
+            setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                if (searchQuery) next.set('q', searchQuery);
+                else next.delete('q');
+                if (next.toString() === prev.toString()) return prev;
+                return next;
+            }, { replace: true });
+        }, 300);
         return () => clearTimeout(timer);
-    }, [searchQuery, setSearchParams]);
+    }, [searchQuery]);
 
     return (
         <div className="container mx-auto max-w-7xl animate-in fade-in duration-700 space-y-8 pt-32 md:pt-0 pb-20">
@@ -142,11 +137,33 @@ const AgentsPage: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-2">
                 {loading ? (
-                    <div className="col-span-full flex flex-col items-center justify-center py-20 animate-pulse">
-                        <div className="size-12 rounded-full bg-muted mb-4 opacity-50" />
-                        <div className="h-4 w-48 bg-muted rounded mb-2 opacity-50" />
-                        <div className="h-3 w-32 bg-muted rounded opacity-30" />
-                    </div>
+                    Array.from({ length: 6 }).map((_, i) => (
+                        <Card key={i} className="flex flex-col h-full border-border animate-pulse bg-card/30">
+                            <CardHeader className="pb-4">
+                                <div className="flex flex-col gap-4">
+                                    <div className="flex items-start justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <div className="p-2 rounded-2xl border border-border h-10 w-10 bg-muted/20" />
+                                            <div className="h-7 w-32 bg-muted rounded" />
+                                        </div>
+                                        <div className="h-8 w-16 bg-muted/40 rounded-full" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <div className="h-4 w-full bg-muted/50 rounded" />
+                                        <div className="h-4 w-5/6 bg-muted/50 rounded" />
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="mt-auto space-y-4">
+                                <div className="flex flex-wrap gap-2">
+                                    <div className="h-6 w-12 bg-muted/40 rounded-full" />
+                                    <div className="h-6 w-20 bg-muted/40 rounded-full" />
+                                    <div className="h-6 w-16 bg-muted/40 rounded-full" />
+                                </div>
+                                <div className="h-10 w-full bg-muted/50 rounded-full" />
+                            </CardContent>
+                        </Card>
+                    ))
                 ) : agents.length === 0 ? (
                     <div className="col-span-full flex flex-col items-center justify-center py-32 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
                         <div className="text-center space-y-2">
@@ -171,7 +188,10 @@ const AgentsPage: React.FC = () => {
                 <Pagination
                     currentPage={page}
                     totalPages={Math.ceil(totalItems / limit)}
-                    onPageChange={setPage}
+                    onPageChange={(p) => {
+                        setPage(p);
+                        fetchAgents(debouncedSearch, p);
+                    }}
                     className="mt-12"
                 />
             )}

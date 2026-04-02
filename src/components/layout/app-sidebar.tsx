@@ -243,16 +243,34 @@ export function AppSidebar() {
 
                 <SidebarContent className="py-2">
                     {isLoadingNav ? (
-                        <div className="flex items-center justify-center py-10">
-                            <motion.div
-                                animate={{ rotate: 360 }}
-                                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                            >
-                                <HugeiconsIcon icon={LoadingIcon} size={20} className="text-muted-foreground" />
-                            </motion.div>
+                        <div className="flex flex-col gap-8 px-2 py-4 animate-pulse">
+                            {[1, 2, 3].map((group) => (
+                                <div key={group} className="space-y-4">
+                                    {state === "expanded" && (
+                                        <div className="h-3 w-16 bg-muted/40 rounded px-2 mx-1" />
+                                    )}
+                                    <div className="space-y-2">
+                                        {[1, 2, 3, 4].map((item) => (
+                                            <div
+                                                key={item}
+                                                className={cn(
+                                                    "flex items-center w-full h-10 px-3 rounded-full bg-muted/20",
+                                                    state === "collapsed" ? "justify-center" : "justify-start gap-3"
+                                                )}
+                                            >
+                                                <div className="size-5 shrink-0 rounded bg-muted/40" />
+                                                {state === "expanded" && (
+                                                    <div className="h-4 w-24 bg-muted/40 rounded" />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    ) : groupedNavItems.map((group: any, index: number) => {
-                        const isCollapsed = collapsedGroups.includes(group.label);
+                    ) : (
+                        groupedNavItems.map((group: any, index: number) => {
+                            const isCollapsed = collapsedGroups.includes(group.label);
                         const isCollapsible = group.collapsible !== false;
 
                         return (
@@ -337,7 +355,8 @@ export function AppSidebar() {
                                 </AnimatePresence>
                             </SidebarGroup>
                         );
-                    })}
+                    })
+                )}
                 </SidebarContent>
 
                 <SidebarFooter className="border-0">

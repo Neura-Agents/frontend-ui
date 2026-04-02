@@ -61,7 +61,7 @@ export const columns: ColumnDef<Usage>[] = [
             const type = usage.resource_type;
             const name = usage.resource_name || usage.resourceName || usage.agentName || usage.agent_name || usage.kb_name || usage.kg_name;
             const resourceId = usage.resource_id;
-            const variant = type === 'agent' ? 'default' : type === 'knowledge-base' ? 'secondary' : 'outline';
+            const variant = type === 'agent' ? 'soft' : type === 'knowledge-base' ? 'success' : 'warning';
 
             return (
                 <div className="flex flex-col gap-0.5">

@@ -35,18 +35,21 @@ export const CreatePromptDialog: React.FC<CreatePromptDialogProps> = ({
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     useEffect(() => {
-        const fetchTypes = async () => {
-            try {
-                const types = await platformService.getPromptTypes();
-                setPromptTypes(types);
-                if (types.length > 0) {
-                    setType(types[0].name);
+        const timer = setTimeout(() => {
+            const fetchTypes = async () => {
+                try {
+                    const types = await platformService.getPromptTypes();
+                    setPromptTypes(types);
+                    if (types.length > 0) {
+                        setType(types[0].name);
+                    }
+                } catch (error) {
+                    console.error('Failed to fetch prompt types', error);
                 }
-            } catch (error) {
-                console.error('Failed to fetch prompt types', error);
-            }
-        };
-        fetchTypes();
+            };
+            fetchTypes();
+        }, 100);
+        return () => clearTimeout(timer);
     }, []);
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {

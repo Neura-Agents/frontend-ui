@@ -81,14 +81,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     useEffect(() => {
         if (!token) return;
 
-        // Refresh token 1 minute before it expires (Keycloak default is 5 mins)
-        // So we refresh every 4 minutes (240,000ms)
-        const refreshInterval = setInterval(async () => {
+        const payload = decodeToken(token);
+        if (!payload || !payload.exp) return;
+
+        const expiresAt = payload.exp * 1000;
+        const now = Date.now();
+        
+        // Refresh 1 minute (60,000ms) before it expires, or immediately if it is already close to expiring
+        const refreshIn = Math.max(0, (expiresAt - now) - 60 * 1000);
+
+        console.log(`Token expires in ${Math.round((expiresAt - now) / 1000)}s. Scheduling refresh in ${Math.round(refreshIn / 1000)}s.`);
+
+        const timeoutId = setTimeout(async () => {
             console.log('🔄 Triggering automatic token refresh...');
             const newToken = await authService.refreshToken();
             if (newToken) {
-                const payload = decodeToken(newToken);
-                setUser(prev => prev ? { ...prev, roles: payload?.realm_access?.roles || [] } : null);
+                const newPayload = decodeToken(newToken);
+                setUser(prev => prev ? { ...prev, roles: newPayload?.realm_access?.roles || [] } : null);
                 setAuthToken(newToken);
                 setToken(newToken);
                 console.log('✅ Token refreshed successfully');
@@ -98,9 +107,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 setUser(null);
                 setToken(null);
             }
-        }, 4 * 60 * 1000);
+        }, refreshIn);
 
-        return () => clearInterval(refreshInterval);
+        return () => clearTimeout(timeoutId);
     }, [token]);
 
     const login = (idp?: string, redirectTo?: string) => authService.login(idp, redirectTo);

@@ -7,6 +7,8 @@ import Footer from '@/components/landingPage/footer';
 import AboutSpacer from '@/components/aboutUs/AboutSpacer';
 import { platformService } from '@/services/platformService';
 
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+
 const fallbackPricingData: PricingCardProps[] = [
     {
         category: 'Starter',
@@ -25,20 +27,23 @@ const PricingPage: React.FC = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchPricingData = async () => {
-            try {
-                const data = await platformService.getPricing();
-                setPlans(data.plans);
-                setFaqs(data.faqs);
-            } catch (error) {
-                console.error('Failed to fetch pricing:', error);
-                setPlans(fallbackPricingData);
-            } finally {
-                setLoading(false);
-            }
-        };
+        const timer = setTimeout(() => {
+            const fetchPricingData = async () => {
+                try {
+                    const data = await platformService.getPricing();
+                    setPlans(data.plans);
+                    setFaqs(data.faqs);
+                } catch (error) {
+                    console.error('Failed to fetch pricing:', error);
+                    setPlans(fallbackPricingData);
+                } finally {
+                    setLoading(false);
+                }
+            };
 
-        fetchPricingData();
+            fetchPricingData();
+        }, 100);
+        return () => clearTimeout(timer);
     }, []);
 
     const PricingContent = (
@@ -79,9 +84,23 @@ const PricingPage: React.FC = () => {
 
                 <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-center pb-12'>
                     {loading ? (
-                        <div className="col-span-full py-20 text-center opacity-50">
-                            <Typography>Loading plans...</Typography>
-                        </div>
+                        Array.from({ length: 3 }).map((_, i) => (
+                            <Card key={i} className="flex flex-col h-96 border-border/50 bg-card/30 animate-pulse">
+                                <CardHeader className="space-y-4 pt-10">
+                                    <div className="h-6 w-1/3 bg-muted rounded mx-auto" />
+                                    <div className="h-10 w-2/3 bg-muted/70 rounded mx-auto" />
+                                </CardHeader>
+                                <CardContent className="space-y-6 px-10">
+                                    <div className="space-y-2">
+                                        <div className="h-4 w-full bg-muted/50 rounded" />
+                                        <div className="h-4 w-5/6 bg-muted/50 rounded" />
+                                        <div className="h-4 w-4/5 bg-muted/50 rounded" />
+                                        <div className="h-4 w-full bg-muted/50 rounded" />
+                                    </div>
+                                    <div className="h-12 w-full bg-muted/60 rounded-full mt-auto" />
+                                </CardContent>
+                            </Card>
+                        ))
                     ) : (
                         plans.map((data, index) => (
                             <PricingCard key={index} {...data} />

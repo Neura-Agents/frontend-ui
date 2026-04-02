@@ -1,12 +1,34 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Typography } from '@/components/ui/typography';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Wallet03Icon } from '@hugeicons/core-free-icons';
+import { billingService } from '@/services/billingService';
+import { Link } from 'react-router-dom';
 
 const DashboardPage: React.FC = () => {
     const { user } = useAuth();
+    const [balance, setBalance] = useState<number>(0);
+    const [loading, setLoading] = useState(true);
+
+    const fetchBalance = async () => {
+        try {
+            const data = await billingService.getBalance();
+            setBalance(data.balance);
+        } catch (error) {
+            console.error('Failed to fetch balance:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchBalance();
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
     return (
         <div className="container mx-auto max-w-7xl animate-in fade-in duration-700 space-y-8 pt-32 md:pt-0 pb-20">
             {/* ─── HEADER ─── */}
@@ -18,7 +40,9 @@ const DashboardPage: React.FC = () => {
                         </Typography>
                     </div>
                 </div>
-                <Button className='rounded-full px-4 py-4' variant='outline'><HugeiconsIcon icon={Wallet03Icon} /> 1000 Credits </Button>
+                <Link to="/billing">
+                    <Button className='rounded-full px-4 py-4' variant='outline'><HugeiconsIcon icon={Wallet03Icon} /> {loading ? '...' : balance.toFixed(2)} Credits </Button>
+                </Link>
             </section>
         </div>
     );

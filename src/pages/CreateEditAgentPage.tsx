@@ -87,36 +87,39 @@ const CreateEditAgentPage: React.FC<CreateEditAgentPageProps> = ({ isEdit = fals
     ]);
 
     useEffect(() => {
-        if (isEdit && id) {
-            const fetchAgent = async () => {
-                try {
-                    const agent = await agentsService.getAgentById(id);
-                    setAgentName(agent.name);
-                    setAgentVersion(agent.version || "1.0.0");
-                    setAgentIcon(agent.icon || "UserCircle02Icon");
-                    setDescription(agent.description || "");
-                    setSystemPrompt(agent.system_prompt || "");
-                    setModel(agent.model_name || "");
-                    setTemperature([Number(agent.temperature || 0.7)]);
-                    setTags(agent.tags || []);
-                    setVisibility(agent.visibility || "private");
-                    setMaxTokens([Number(agent.max_tokens || 2048)]);
+        const timer = setTimeout(() => {
+            if (isEdit && id) {
+                const fetchAgent = async () => {
+                    try {
+                        const agent = await agentsService.getAgentById(id);
+                        setAgentName(agent.name);
+                        setAgentVersion(agent.version || "1.0.0");
+                        setAgentIcon(agent.icon || "UserCircle02Icon");
+                        setDescription(agent.description || "");
+                        setSystemPrompt(agent.system_prompt || "");
+                        setModel(agent.model_name || "");
+                        setTemperature([Number(agent.temperature || 0.7)]);
+                        setTags(agent.tags || []);
+                        setVisibility(agent.visibility || "private");
+                        setMaxTokens([Number(agent.max_tokens || 2048)]);
 
 
-                    if (agent.capabilities) {
-                        const newSelectedIds = new Set<string>();
-                        agent.capabilities.forEach((cap: any) => {
-                            newSelectedIds.add(`${cap.capability_type}-${cap.capability_id}`);
-                        });
-                        setSelectedIds(newSelectedIds);
+                        if (agent.capabilities) {
+                            const newSelectedIds = new Set<string>();
+                            agent.capabilities.forEach((cap: any) => {
+                                newSelectedIds.add(`${cap.capability_type}-${cap.capability_id}`);
+                            });
+                            setSelectedIds(newSelectedIds);
+                        }
+                    } catch (error) {
+                        console.error("Failed to fetch agent:", error);
+                        alert("Failed to fetch agent details");
                     }
-                } catch (error) {
-                    console.error("Failed to fetch agent:", error);
-                    alert("Failed to fetch agent details");
-                }
-            };
-            fetchAgent();
-        }
+                };
+                fetchAgent();
+            }
+        }, 100);
+        return () => clearTimeout(timer);
     }, [isEdit, id]);
 
     const handleCreateAgent = async (status: 'published' | 'draft' = 'published') => {

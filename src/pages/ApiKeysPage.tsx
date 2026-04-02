@@ -58,7 +58,10 @@ const ApiKeysPage: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        fetchKeys();
+        const timer = setTimeout(() => {
+            fetchKeys();
+        }, 100);
+        return () => clearTimeout(timer);
     }, [fetchKeys]);
 
     const handleCreateKey = async () => {
@@ -138,32 +141,26 @@ const ApiKeysPage: React.FC = () => {
             </section>
 
             <section tabIndex={0} className="px-2">
-                {loading ? (
-                    <div className="flex items-center justify-center p-20 opacity-50">
-                        <HugeiconsIcon icon={Refresh01Icon} size={32} className="animate-spin" />
-                    </div>
-                ) : (
-                    <div className='flex flex-col gap-2'>
-                        <div className='flex items-end justify-end'>
-                            <div className="flex gap-2">
-                                <Button className="rounded-full gap-2 h-10" onClick={() => {
-                                    setGeneratedKey(null);
-                                    setNewKeyName('');
-                                    setIsCreateDialogOpen(true);
-                                }}>
-                                    <HugeiconsIcon icon={Add01Icon} size={18} />
-                                    Create New Key
-                                </Button>
-                                <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => fetchKeys()}>
-                                    <HugeiconsIcon icon={Refresh01Icon} size={18} />
-                                </Button>
-                            </div>
-                        </div>
-                        <div>
-                            <DataTable columns={columns} data={keys} />
+                <div className='flex flex-col gap-2'>
+                    <div className='flex items-end justify-end'>
+                        <div className="flex gap-2">
+                            <Button className="rounded-full gap-2 h-10" onClick={() => {
+                                setGeneratedKey(null);
+                                setNewKeyName('');
+                                setIsCreateDialogOpen(true);
+                            }}>
+                                <HugeiconsIcon icon={Add01Icon} size={18} />
+                                Create New Key
+                            </Button>
+                            <Button variant="outline" size="icon" className="rounded-full h-10 w-10" onClick={() => fetchKeys()}>
+                                <HugeiconsIcon icon={Refresh01Icon} size={18} />
+                            </Button>
                         </div>
                     </div>
-                )}
+                    <div>
+                        <DataTable columns={columns} data={keys} loading={loading} />
+                    </div>
+                </div>
             </section>
 
             {/* Create Dialog */}

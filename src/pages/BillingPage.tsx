@@ -21,7 +21,10 @@ const BillingPage: React.FC = () => {
     };
 
     useEffect(() => {
-        fetchBalance();
+        const timer = setTimeout(() => {
+            fetchBalance();
+        }, 100);
+        return () => clearTimeout(timer);
     }, []);
 
     return (
@@ -39,7 +42,7 @@ const BillingPage: React.FC = () => {
                 <Card className='flex-1'>
                     <CardHeader>
                         <CardTitle className='flex items-center justify-between'>
-                            <span className='font-season-mix font-semibold'>${loading ? '...' : balance.toFixed(2)}</span>
+                            <span className='font-season-mix font-semibold'>{loading ? '...' : balance.toFixed(2)}</span>
                         </CardTitle>
                         <CardDescription>Credits Left</CardDescription>
                     </CardHeader>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Typography } from '@/components/ui/typography';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -63,24 +63,25 @@ const SystemPromptsPage: React.FC = () => {
     useEffect(() => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchQuery);
+            fetchPrompts(searchQuery, 1);
 
-            const newParams = new URLSearchParams(searchParams);
-            if (searchQuery) {
-                newParams.set('q', searchQuery);
-            } else {
-                newParams.delete('q');
-            }
+            setSearchParams(prev => {
+                const next = new URLSearchParams(prev);
+                if (searchQuery) next.set('q', searchQuery);
+                else next.delete('q');
 
-            // If the query changed from what's in URL, reset to page 1
-            if (searchQuery !== (searchParams.get('q') || '')) {
-                newParams.set('page', '1');
-                setCurrentPage(1);
-            }
-
-            setSearchParams(newParams, { replace: true });
-        }, 500);
+                // If the query changed from what was in URL, reset to page 1
+                if (searchQuery !== (prev.get('q') || '')) {
+                    next.set('page', '1');
+                    setCurrentPage(1);
+                }
+                
+                if (next.toString() === prev.toString()) return prev;
+                return next;
+            }, { replace: true });
+        }, 300);
         return () => clearTimeout(timer);
-    }, [searchQuery, setSearchParams]);
+    }, [searchQuery]);
 
     // Update URL when page changes
     useEffect(() => {
@@ -92,27 +93,24 @@ const SystemPromptsPage: React.FC = () => {
         }
     }, [currentPage, setSearchParams, searchParams]);
 
-    const fetchPrompts = useCallback(async () => {
+    const fetchPrompts = async (query: string = debouncedSearch, pageNum: number = currentPage) => {
         try {
             setIsLoading(true);
             const data = await platformService.listPrompts({
-                page: currentPage,
+                page: pageNum,
                 limit: pageSize,
-                q: debouncedSearch
+                q: query
             });
             setPrompts(data.prompts);
             setTotalPrompts(data.total);
             setTotalPages(data.totalPages);
+            setCurrentPage(pageNum);
         } catch (error) {
             showAlert({ title: 'Error', description: 'Failed to fetch prompts', variant: 'destructive' });
         } finally {
             setIsLoading(false);
         }
-    }, [currentPage, debouncedSearch, pageSize, showAlert]);
-
-    useEffect(() => {
-        fetchPrompts();
-    }, [fetchPrompts]);
+    };
 
     const handleUploadPrompt = async (file: File, name: string, type: string) => {
         try {
@@ -184,7 +182,7 @@ const SystemPromptsPage: React.FC = () => {
                             variant="outline"
                             size="icon"
                             className="rounded-full h-10 w-10 shrink-0"
-                            onClick={fetchPrompts}
+                            onClick={() => fetchPrompts()}
                             disabled={isLoading}
                         >
                             <HugeiconsIcon icon={Refresh01Icon} size={18} className={isLoading ? "animate-spin" : ""} />
@@ -377,7 +375,10 @@ const SystemPromptsPage: React.FC = () => {
                     <Pagination
                         currentPage={currentPage}
                         totalPages={totalPages}
-                        onPageChange={setCurrentPage}
+                        onPageChange={(p) => {
+                            setCurrentPage(p);
+                            fetchPrompts(debouncedSearch, p);
+                        }}
                     />
                 </div>
             )}
