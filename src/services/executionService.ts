@@ -27,10 +27,10 @@ export const executionService = {
         if (!response.ok) {
             if (response.status === 402) {
                 const errorData = await response.json();
-                throw { 
-                    status: 402, 
-                    message: errorData.message || 'Insufficient balance', 
-                    balance: errorData.balance 
+                throw {
+                    status: 402,
+                    message: errorData.message || 'Insufficient balance',
+                    balance: errorData.balance
                 };
             }
             throw new Error(`Failed to trigger agent: ${response.statusText}`);
@@ -39,22 +39,29 @@ export const executionService = {
         await this.handleSSEResponse(response, onEvent);
     },
 
-    async subscribeToWorkflow(workflowId: string, onEvent: (event: ExecutionEvent) => void) {
+    async subscribeToWorkflow(slug: string, workflowId: string, onEvent: (event: ExecutionEvent) => void) {
         const token = getAuthToken();
-        const response = await fetch(`${KONG_URL}${BASE_URL}/agent/workflow/subscribe/${workflowId}`, {
-            method: 'GET',
+        const response = await fetch(`${KONG_URL}${BASE_URL}/${slug}/stream`, {
+            method: 'POST',
             headers: {
+                'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`,
             },
+            body: JSON.stringify({
+                jsonrpc: "2.0",
+                method: "tasks/resubscribe",
+                params: { task_id: workflowId },
+                id: Date.now()
+            }),
         });
 
         if (!response.ok) {
             if (response.status === 402) {
                 const errorData = await response.json();
-                throw { 
-                    status: 402, 
-                    message: errorData.message || 'Insufficient balance', 
-                    balance: errorData.balance 
+                throw {
+                    status: 402,
+                    message: errorData.message || 'Insufficient balance',
+                    balance: errorData.balance
                 };
             }
             throw new Error(`Failed to subscribe to workflow: ${response.statusText}`);
@@ -81,7 +88,7 @@ export const executionService = {
             if (done) break;
 
             buffer += decoder.decode(value, { stream: true });
-            
+
             const lines = buffer.split('\n');
             buffer = lines.pop() || ''; // Keep the last incomplete line in buffer
 
@@ -104,8 +111,13 @@ export const executionService = {
         }
     },
 
-    async cancelWorkflow(workflowId: string) {
-        const response = await apiClient.post(`${BASE_URL}/workflow/cancel/${workflowId}`);
+    async cancelWorkflow(slug: string, workflowId: string) {
+        const response = await apiClient.post(`${BASE_URL}/${slug}/stream`, {
+            jsonrpc: "2.0",
+            method: "tasks/cancel",
+            params: { task_id: workflowId, id: workflowId },
+            id: Date.now()
+        });
         return response.data;
     }
 };

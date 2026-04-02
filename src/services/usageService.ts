@@ -96,5 +96,32 @@ export const usageService = {
             total_input_tokens: Number(item.total_input_tokens || 0),
             total_completion_tokens: Number(item.total_completion_tokens || 0)
         }));
+    },
+
+    async getExchangeRates(): Promise<any> {
+        const CACHE_KEY = 'exchange_rates_usd';
+        const CACHE_EXPIRY_KEY = 'exchange_rates_usd_expiry';
+        const TTL = 24 * 60 * 60 * 1000; // 24 hours on frontend
+
+        const now = Date.now();
+        const cached = localStorage.getItem(CACHE_KEY);
+        const expiry = localStorage.getItem(CACHE_EXPIRY_KEY);
+
+        if (cached && expiry && now < Number(expiry)) {
+            try {
+                return JSON.parse(cached);
+            } catch (e) {
+                localStorage.removeItem(CACHE_KEY);
+                localStorage.removeItem(CACHE_EXPIRY_KEY);
+            }
+        }
+
+        const response = await apiClient.get('/backend/api/platform/external/exchange-rates');
+        const data = response.data;
+
+        localStorage.setItem(CACHE_KEY, JSON.stringify(data));
+        localStorage.setItem(CACHE_EXPIRY_KEY, (now + TTL).toString());
+
+        return data;
     }
 };

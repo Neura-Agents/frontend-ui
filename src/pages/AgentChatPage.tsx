@@ -7,13 +7,20 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import * as AllIcons from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { PromptInput } from '@/components/reusable/prompt-input';
-import { ToolActivity } from '@/components/agents/ExecutionEvents';
 import { cn } from '@/lib/utils';
+import { ToolActivity } from '@/components/agents/ExecutionEvents';
+import { MessageUsageTooltip } from '@/components/agents/MessageUsageTooltip';
 import {
     Delete02Icon,
     Message01Icon,
-    Copy01Icon
+    Copy01Icon,
+    InformationCircleIcon
 } from '@hugeicons/core-free-icons';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger
+} from '@/components/ui/tooltip';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { CodeBlock } from '@/components/ui/code-block';
@@ -35,13 +42,19 @@ interface Message {
     events: ExecutionEvent[];
     workflowId?: string;
     status?: 'running' | 'completed' | 'failed' | 'cancelled';
+    usage?: {
+        prompt_tokens: number;
+        completion_tokens: number;
+        total_tokens: number;
+        cost?: number;
+    };
 }
 
 const TypingEffect: React.FC<{ text: string; delay?: number; onUpdate?: () => void; onComplete?: () => void }> = ({ text, delay = 10, onUpdate, onComplete }) => {
     const [displayedText, setDisplayedText] = useState("");
 
     const hasTriggeredComplete = useRef(false);
-    
+
     // Reset the completion guard if text changes
     useEffect(() => {
         hasTriggeredComplete.current = false;
@@ -81,7 +94,7 @@ const TypingEffect: React.FC<{ text: string; delay?: number; onUpdate?: () => vo
 
     return (
         <div className="flex flex-col gap-0">
-             <ReactMarkdown 
+            <ReactMarkdown
                 remarkPlugins={[remarkGfm]}
                 components={{
                     p: ({ children }) => (
@@ -105,7 +118,7 @@ const TypingEffect: React.FC<{ text: string; delay?: number; onUpdate?: () => vo
                         const match = /language-(\w+)/.exec(className || '');
                         if (!inline && match) {
                             return (
-                                <CodeBlock 
+                                <CodeBlock
                                     className="my-4"
                                 >
                                     {String(children).replace(/\n$/, '')}
@@ -151,13 +164,14 @@ const AgentChatPage: React.FC = () => {
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const lastMessageCount = useRef(0);
     const [typingFinished, setTypingFinished] = useState<Record<string, boolean>>({});
+    const initializedRef = useRef(false);
 
     const scrollToBottom = (behavior: ScrollBehavior = "smooth", force = false) => {
         if (messagesEndRef.current && messagesContainerRef.current) {
             const container = messagesContainerRef.current;
             // Only scroll if we are near the bottom (within 100px) or if force is true
             const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-            
+
             if (force || isNearBottom) {
                 messagesEndRef.current.scrollIntoView({ behavior, block: 'end' });
             }
@@ -171,29 +185,20 @@ const AgentChatPage: React.FC = () => {
     }, [messages]);
 
     useEffect(() => {
-        if (slug) {
-            const fetchAgent = async () => {
-                try {
-                    const data = await agentsService.getAgentById(slug);
-                    setAgent(data);
-                } catch (error) {
-                    console.error('Failed to fetch agent:', error);
-                } finally {
-                    setLoading(false);
-                }
-            };
-            fetchAgent();
-        }
-    }, [slug]);
+        if (!slug || initializedRef.current) return;
+        initializedRef.current = true;
 
-    useEffect(() => {
-        if (!slug) return;
-
-        const checkActiveWorkflows = async () => {
+        const initializePage = async () => {
             try {
+                // Fetch agent info
+                const agentData = await agentsService.getAgentById(slug);
+                setAgent(agentData);
+                setLoading(false);
+
+                // Check for active workflows/resubscribe
                 const response = await executionService.getActiveWorkflows(slug);
                 if (response.status === 'success' && response.workflows && response.workflows.length > 0) {
-                    const activeWorkflow = response.workflows[0]; // Take the first one for now
+                    const activeWorkflow = response.workflows[0];
                     const assistantMsgId = Date.now().toString();
 
                     setMessages([{
@@ -208,7 +213,7 @@ const AgentChatPage: React.FC = () => {
                     setIsExecuting(true);
 
                     try {
-                        await executionService.subscribeToWorkflow(activeWorkflow.workflowId, (event) => {
+                        await executionService.subscribeToWorkflow(slug, activeWorkflow.workflowId, (event) => {
                             handleExecutionEvent(assistantMsgId, event);
                         });
                     } catch (error: any) {
@@ -216,22 +221,23 @@ const AgentChatPage: React.FC = () => {
                         if (error.status === 402) {
                             const displayMessage = `Insufficient Credits: ${error.message}. Please [top up your balance](/billing) to continue.`;
                             setMessages(prev => prev.map(m =>
-                                m.id === assistantMsgId ? { 
-                                    ...m, 
-                                    status: 'failed', 
+                                m.id === assistantMsgId ? {
+                                    ...m,
+                                    status: 'failed',
                                     content: displayMessage,
-                                    blocks: [{ type: 'text', content: displayMessage }] 
+                                    blocks: [{ type: 'text', content: displayMessage }]
                                 } : m
                             ));
                         }
                     }
                 }
             } catch (error) {
-                console.error('Failed to check active workflows:', error);
+                console.error('Initialization failed:', error);
+                setLoading(false);
             }
         };
 
-        checkActiveWorkflows();
+        initializePage();
     }, [slug]);
 
     const handleSend = async () => {
@@ -273,18 +279,18 @@ const AgentChatPage: React.FC = () => {
             });
         } catch (error: any) {
             console.error('Execution failed:', error);
-            
+
             let displayMessage = 'Workflow execution failed.';
             if (error.status === 402) {
                 displayMessage = `Insufficient Credits: ${error.message}. Please [top up your balance](/billing) to continue.`;
             }
 
             setMessages(prev => prev.map(m =>
-                m.id === assistantMsgId ? { 
-                    ...m, 
-                    status: 'failed', 
+                m.id === assistantMsgId ? {
+                    ...m,
+                    status: 'failed',
                     content: displayMessage,
-                    blocks: [{ type: 'text', content: displayMessage }] 
+                    blocks: [{ type: 'text', content: displayMessage }]
                 } : m
             ));
             setCurrentWorkflowId(null);
@@ -298,11 +304,11 @@ const AgentChatPage: React.FC = () => {
         setMessages(prev => {
             return prev.map(m => {
                 if (m.id === assistantMsgId) {
-                    const newEvents = [...m.events, event];
                     let newContent = m.content;
                     let newBlocks = [...m.blocks];
                     let newStatus = m.status;
                     let newWorkflowId = m.workflowId;
+                    let newUsage = m.usage;
 
                     // Support A2A protocol structure where data is inside result.metadata
                     const metadata = event.data?.metadata || {};
@@ -378,15 +384,19 @@ const AgentChatPage: React.FC = () => {
                         setIsStopping(false);
                         setIsExecuting(false);
                         // Proactively clear any pending tool loading states
-                        newBlocks = newBlocks.map(b => 
+                        newBlocks = newBlocks.map(b =>
                             b.type === 'tool_activity' ? { ...b, isLoading: false } : b
                         );
                         // @ts-ignore
                         if (window.eventSource) window.eventSource.close();
+                        const usage = metadata.usage || internalData.usage;
+                        if (usage) {
+                            newUsage = usage;
+                        }
                     } else if (event.type === 'Error' || event.type === 'error') {
                         newStatus = 'failed';
                         const errorMessage = internalData.message || metadata.message || 'Unknown error occurred';
-                        
+
                         if (errorMessage.toLowerCase().includes('insufficient balance') || errorMessage.toLowerCase().includes('insufficient credits')) {
                             const helpMessage = `**Insufficient Credits**: Your balance is too low to continue this execution. Please [top up your balance](/billing) to resume.`;
                             newContent = helpMessage;
@@ -399,7 +409,7 @@ const AgentChatPage: React.FC = () => {
                         setCurrentWorkflowId(null);
                         setIsStopping(false);
                         setIsExecuting(false);
-                        newBlocks = newBlocks.map(b => 
+                        newBlocks = newBlocks.map(b =>
                             b.type === 'tool_activity' ? { ...b, isLoading: false } : b
                         );
                         // @ts-ignore
@@ -410,9 +420,10 @@ const AgentChatPage: React.FC = () => {
                         ...m,
                         content: newContent,
                         blocks: newBlocks,
-                        events: newEvents,
+                        events: [...m.events, event],
                         status: newStatus,
-                        workflowId: newWorkflowId
+                        workflowId: newWorkflowId,
+                        usage: newUsage
                     };
                 }
                 return m;
@@ -421,10 +432,10 @@ const AgentChatPage: React.FC = () => {
     };
 
     const handleCancel = async () => {
-        if (currentWorkflowId) {
+        if (currentWorkflowId && slug) {
             setIsStopping(true);
             try {
-                await executionService.cancelWorkflow(currentWorkflowId);
+                await executionService.cancelWorkflow(slug, currentWorkflowId);
             } catch (error) {
                 console.error('Failed to cancel workflow:', error);
                 setIsStopping(false);
@@ -477,7 +488,7 @@ const AgentChatPage: React.FC = () => {
 
             {/* Chat Interface */}
             <section className="flex-1 flex flex-col min-h-0 relative">
-                <div 
+                <div
                     ref={messagesContainerRef}
                     className="flex-1 overflow-y-auto px-4 space-y-6 pb-32 pt-8"
                 >
@@ -544,24 +555,40 @@ const AgentChatPage: React.FC = () => {
                                     </div>
 
                                     {/* Message Actions */}
-                                    {message.status !== 'running' && 
-                                     message.role === 'assistant' && 
-                                     (message.blocks.length === 0 || 
-                                      message.blocks[message.blocks.length - 1].type !== 'text' || 
-                                      typingFinished[message.id]) && (
-                                        <div className="flex items-center gap-1 mt-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                                                onClick={() => {
-                                                    navigator.clipboard.writeText(message.content);
-                                                }}
-                                            >
-                                                <HugeiconsIcon icon={Copy01Icon} size={16} />
-                                            </Button>
-                                        </div>
-                                    )}
+                                    {message.status !== 'running' &&
+                                        message.role === 'assistant' &&
+                                        (message.blocks.length === 0 ||
+                                            message.blocks[message.blocks.length - 1].type !== 'text' ||
+                                            typingFinished[message.id]) && (
+                                            <div className="flex items-center gap-1 mt-2">
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(message.content);
+                                                    }}
+                                                >
+                                                    <HugeiconsIcon icon={Copy01Icon} size={16} />
+                                                </Button>
+                                                {message.usage && (
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                            >
+                                                                <HugeiconsIcon icon={InformationCircleIcon} size={16} />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent className="border border-border shadow-xl">
+                                                            <MessageUsageTooltip usage={message.usage} />
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                )}
+                                            </div>
+                                        )}
                                 </div>
                             )}
                         </div>

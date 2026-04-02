@@ -148,21 +148,17 @@ const UsagePage: React.FC = () => {
     };
 
     React.useEffect(() => {
-        const timer = setTimeout(() => {
-            const fetchRates = async () => {
-                try {
-                    const res = await fetch('https://api.exchangerate-api.com/v4/latest/USD');
-                    const data = await res.json();
-                    if (data && data.rates) {
-                        setExchangeRates(prev => ({ ...prev, ...data.rates }));
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch exchange rates:', error);
+        const fetchRates = async () => {
+            try {
+                const data = await usageService.getExchangeRates();
+                if (data && data.rates) {
+                    setExchangeRates(prev => ({ ...prev, ...data.rates }));
                 }
-            };
-            fetchRates();
-        }, 100);
-        return () => clearTimeout(timer);
+            } catch (error) {
+                console.error('Failed to fetch internal exchange rates:', error);
+            }
+        };
+        fetchRates();
     }, []);
 
     React.useEffect(() => {
