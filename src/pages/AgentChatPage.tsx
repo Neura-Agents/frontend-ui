@@ -8,7 +8,7 @@ import * as AllIcons from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
 import { PromptInput } from '@/components/reusable/prompt-input';
 import { cn } from '@/lib/utils';
-import { ToolActivity } from '@/components/agents/ExecutionEvents';
+import { ToolExecution } from '@/components/agents/ToolExecution';
 import { MessageUsageTooltip } from '@/components/agents/MessageUsageTooltip';
 import {
     Delete02Icon,
@@ -536,7 +536,7 @@ const AgentChatPage: React.FC = () => {
                                                 );
                                             }
                                             if (block.type === 'tool_activity') {
-                                                return <ToolActivity key={idx} data={{
+                                                return <ToolExecution key={idx} data={{
                                                     name: block.data.name,
                                                     arguments: block.data.arguments,
                                                     result: block.result,
