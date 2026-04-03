@@ -231,14 +231,14 @@ const SystemPromptsPage: React.FC = () => {
                         </div>
                     </div>
                 ) : prompts.map((prompt) => (
-                    <Card key={prompt.id} className={`flex flex-col h-full hover:border-primary/40 transition-all group border-border relative overflow-hidden`}>
-                        <CardHeader className="pb-2">
-                            <div className="flex flex-col gap-4">
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <CardTitle className="text-lg tracking-tight font-season-mix">{prompt.name}</CardTitle>
+                    <Card key={prompt.id} className={`flex flex-col h-full min-w-0 hover:border-primary/40 transition-all group border-border relative overflow-hidden`}>
+                        <CardHeader className="pb-2 min-w-0">
+                            <div className="flex flex-col gap-4 min-w-0">
+                                <div className="flex items-center justify-between min-w-0 gap-2">
+                                    <div className="flex items-center gap-3 min-w-0">
+                                        <CardTitle className="text-base sm:text-lg tracking-tight font-season-mix truncate">{prompt.name}</CardTitle>
                                     </div>
-                                    <div className="flex items-center gap-1.5 font-medium text-foreground">
+                                    <div className="flex items-center gap-1.5 font-medium text-foreground shrink-0">
                                         <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
                                             {
                                                 !prompt.is_active && (
@@ -258,7 +258,6 @@ const SystemPromptsPage: React.FC = () => {
                                                                 <p>Activate this version</p>
                                                             </TooltipContent>
                                                         </Tooltip>
-
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
                                                                 <Button
@@ -283,24 +282,24 @@ const SystemPromptsPage: React.FC = () => {
                                         </div>
                                     </div>
                                     {prompt.is_active && (
-                                        <Badge variant="success" className="rounded-full gap-1 shadow-sm">
+                                        <Badge variant="success" className="rounded-full gap-1 shadow-sm shrink-0">
                                             <HugeiconsIcon icon={CheckmarkCircle02Icon} size={12} />
                                             Active
                                         </Badge>
                                     )}
                                 </div>
 
-                                <CardDescription className="line-clamp-2 min-h-[40px] text-sm leading-relaxed">
+                                <CardDescription className="line-clamp-2 min-h-[40px] text-xs sm:text-sm leading-relaxed">
                                     {prompt.metadata?.description || `Stored at: ${prompt.storage_path}`}
                                 </CardDescription>
-                                <div className="flex flex-col gap-1">
+                                <div className="flex flex-col gap-1 min-w-0">
                                     <Typography className="text-xs text-muted-foreground">Prompt Id</Typography>
-                                    <CodeBlock>{prompt.id || 'N/A'}</CodeBlock>
+                                    <CodeBlock className="w-full">{prompt.id || 'N/A'}</CodeBlock>
                                 </div>
                             </div>
                         </CardHeader>
-                        <CardContent className="mt-auto space-y-4">
-                            <div className="flex flex-col gap-2">
+                        <CardContent className="mt-auto space-y-4 min-w-0">
+                            <div className="flex flex-col gap-2 min-w-0">
                                 {/* Targeting Indicators */}
                                 {(prompt.targeting_users?.length || prompt.targeting_agents?.length || prompt.targeting_roles?.length) ? (
                                     <div className="flex flex-wrap gap-2 mt-3">
@@ -322,19 +321,19 @@ const SystemPromptsPage: React.FC = () => {
                                     </div>
                                 ) : null}
 
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Badge variant="default" className="rounded-full font-mono text-[10px] tracking-tighter uppercase px-2">
+                                <div className="flex flex-wrap items-center gap-2 mb-2">
+                                    <Badge variant="default" className="rounded-full font-mono text-[10px] tracking-tighter uppercase px-2 shrink-0">
                                         {prompt.type}
                                     </Badge>
                                     {prompt.metadata && Object.keys(prompt.metadata).length > 0 && (
                                         <>
                                             {prompt.metadata.version && (
-                                                <Badge variant="outline">
+                                                <Badge variant="outline" className="shrink-0">
                                                     v{prompt.metadata.version}
                                                 </Badge>
                                             )}
                                             {prompt.metadata.agent && (
-                                                <Badge variant="outline">
+                                                <Badge variant="outline" className="shrink-0">
                                                     {prompt.metadata.agent}
                                                 </Badge>
                                             )}

@@ -395,8 +395,8 @@ export function AppSidebar() {
                                         variant="ghost"
                                         size="lg"
                                         className={cn(
-                                            "w-full py-5 transition-all hover:cursor-pointer",
-                                            state === "collapsed" ? "justify-center px-0" : "justify-start gap-3 px-4"
+                                            "w-full transition-all hover:cursor-pointer rounded-full",
+                                            state === "collapsed" ? "justify-center px-0" : "justify-start gap-2 px-1"
                                         )}
                                     >
                                         <Avatar className="h-8 w-8 shrink-0">

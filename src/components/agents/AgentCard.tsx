@@ -53,22 +53,22 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onDelete }) => {
     };
 
     return (
-        <Card className="flex flex-col h-full hover:border-primary/40 transition-all group border-border relative overflow-hidden">
-            <CardHeader className="pb-4">
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-start justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="p-2 rounded-2xl border border-border">
+        <Card className="flex flex-col h-full hover:border-primary/40 transition-all group border-border relative overflow-hidden min-w-0">
+            <CardHeader className="pb-4 min-w-0">
+                <div className="flex flex-col gap-4 min-w-0">
+                    <div className="flex flex-wrap items-start justify-between gap-3 min-w-0">
+                        <div className="flex items-center gap-3 min-w-0">
+                            <div className="p-2 rounded-2xl border border-border shrink-0">
                                 <HugeiconsIcon
                                     icon={(AllIcons as any)[agent.icon] || AllIcons.UserCircle02Icon}
-                                    className="text-foreground size-5"
+                                    className="text-foreground size-5 sm:size-6"
                                 />
                             </div>
-                            <CardTitle className="text-xl">
+                            <CardTitle className="text-lg sm:text-xl font-season-mix tracking-tight truncate min-w-0">
                                 {agent.name}
                             </CardTitle>
                         </div>
-                        <div className="flex items-center gap-1.5 font-medium text-foreground mr-1">
+                        <div className="flex items-center gap-1.5 font-medium text-foreground shrink-0 ml-auto">
                             <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -127,34 +127,34 @@ const AgentCard: React.FC<AgentCardProps> = ({ agent, onDelete }) => {
                             </div>
                         </div>
                     </div>
-                    <CardDescription className="line-clamp-2 min-h-[40px] text-sm leading-relaxed">
+                    <CardDescription className="line-clamp-2 min-h-[40px] text-xs sm:text-sm leading-relaxed">
                         {agent.description}
                     </CardDescription>
                 </div>
             </CardHeader>
-            <CardContent className="mt-auto space-y-4">
-                <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline" className="capitalize">
+            <CardContent className="mt-auto space-y-4 min-w-0">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1.5 min-w-0">
+                    <Badge variant="outline" className="capitalize text-[10px] sm:text-xs">
                         {agent.version}
                     </Badge>
-                    <Badge variant="outline" className="capitalize">
+                    <Badge variant="outline" className="capitalize text-[10px] sm:text-xs truncate max-w-[120px]">
                         {agent.model_name || 'No Model'}
                     </Badge>
                     <Badge
                         variant={agent.status === 'published' ? 'soft' : 'outline'}
-                        className="capitalize"
+                        className="capitalize text-[10px] sm:text-xs"
                     >
                         {agent.status}
                     </Badge>
-                    <Badge variant="outline" className="capitalize">
+                    <Badge variant="outline" className="capitalize py-0.5 px-2.5 rounded-full border-border/60 text-[10px] sm:text-xs shrink-0">
                         {agent.visibility === 'public' ? (
                             <div className="flex items-center gap-1">
-                                <HugeiconsIcon icon={Globe02Icon} size={12} />
+                                <HugeiconsIcon icon={Globe02Icon} size={10} />
                                 <span>Public</span>
                             </div>
                         ) : (
                             <div className="flex items-center gap-1">
-                                <HugeiconsIcon icon={LockedIcon} size={12} />
+                                <HugeiconsIcon icon={LockedIcon} size={10} />
                                 <span>Private</span>
                             </div>
                         )}

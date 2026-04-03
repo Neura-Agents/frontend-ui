@@ -272,15 +272,19 @@ const MCPPage: React.FC = () => {
                             </div>
                         ) : (
                             servers.map((server, idx) => (
-                                <Card key={server.server_id || idx} className="flex flex-col h-full group border-border hover:border-primary/30 transition-all duration-300">
-                                    <CardHeader>
-                                        <div className="flex items-start justify-between">
-                                            <div className="space-y-1">
-                                                <CardTitle className="text-xl">{server.server_name || 'Unnamed Server'}</CardTitle>
-                                                <CardDescription className="text-sm">{server.description || 'No description provided.'}</CardDescription>
+                                <Card key={server.server_id || idx} className="flex flex-col h-full group border-border hover:border-primary/30 transition-all duration-300 min-w-0">
+                                    <CardHeader className="pb-3 min-w-0">
+                                        <div className="flex flex-wrap items-start justify-between gap-3 min-w-0">
+                                            <div className="space-y-1 flex-1 min-w-0">
+                                                <CardTitle className="text-lg sm:text-xl font-season-mix tracking-tight truncate">
+                                                    {server.server_name || 'Unnamed Server'}
+                                                </CardTitle>
+                                                <CardDescription className="text-xs sm:text-sm line-clamp-1">
+                                                    {server.description || 'No description provided.'}
+                                                </CardDescription>
                                             </div>
                                             {server.user_id === user?.id && (
-                                                <div className="flex gap-1">
+                                                <div className="flex gap-1 shrink-0 ml-auto">
                                                     <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
                                                         <Tooltip>
                                                             <TooltipTrigger asChild>
@@ -290,7 +294,7 @@ const MCPPage: React.FC = () => {
                                                                     className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
                                                                     onClick={() => handleEdit(server)}
                                                                 >
-                                                                    <HugeiconsIcon icon={PencilEdit01Icon} size={16} />
+                                                                    <HugeiconsIcon icon={PencilEdit01Icon} size={14} />
                                                                 </Button>
                                                             </TooltipTrigger>
                                                             <TooltipContent>
@@ -306,7 +310,7 @@ const MCPPage: React.FC = () => {
                                                                     className="h-7 w-7 rounded-full hover:bg-destructive/20 hover:text-destructive"
                                                                     onClick={() => handleDeleteClick(server)}
                                                                 >
-                                                                    <HugeiconsIcon icon={Delete02Icon} size={16} />
+                                                                    <HugeiconsIcon icon={Delete02Icon} size={14} />
                                                                 </Button>
                                                             </TooltipTrigger>
                                                             <TooltipContent>
@@ -318,29 +322,29 @@ const MCPPage: React.FC = () => {
                                             )}
                                         </div>
                                     </CardHeader>
-                                    <CardContent className="mt-auto">
-                                        <div className="flex flex-col gap-2">
-                                            <div className="flex flex-col gap-1">
-                                                <Typography className="text-xs text-muted-foreground">Server Id</Typography>
-                                                <CodeBlock>{server.server_id || 'N/A'}</CodeBlock>
+                                    <CardContent className="mt-auto min-w-0">
+                                        <div className="flex flex-col gap-3 min-w-0">
+                                            <div className="flex flex-col gap-1 min-w-0">
+                                                <Typography className="text-[10px] sm:text-xs text-muted-foreground font-medium">Server Identifier</Typography>
+                                                <CodeBlock className="text-[10px] sm:text-xs py-1 px-2.5">{server.server_id || 'N/A'}</CodeBlock>
                                             </div>
-                                            <div className="flex flex-col gap-1">
-                                                <Typography className="text-xs text-muted-foreground">Endpoint URL</Typography>
-                                                <CodeBlock>{server.url || 'No endpoint configured'}</CodeBlock>
+                                            <div className="flex flex-col gap-1 min-w-0">
+                                                <Typography className="text-[10px] sm:text-xs text-muted-foreground font-medium">Endpoint Endpoint</Typography>
+                                                <CodeBlock className="text-[10px] sm:text-xs py-1 px-2.5 truncate">{server.url || 'No endpoint configured'}</CodeBlock>
                                             </div>
-                                            <div className="flex flex-col gap-1">
-                                                <Typography className="text-xs text-muted-foreground">Transport & Visibility</Typography>
-                                                <div className="flex items-center gap-2">
-                                                    <Badge variant="soft">{server.transport || 'N/A'}</Badge>
-                                                    <Badge variant="outline" className="capitalize py-0.5 px-2.5 rounded-full border-border/60">
+                                            <div className="flex flex-col gap-2 min-w-0">
+                                                <Typography className="text-[10px] sm:text-xs text-muted-foreground font-medium">Policy & Transport</Typography>
+                                                <div className="flex flex-wrap items-center gap-2 min-w-0">
+                                                    <Badge variant="soft" className="text-[10px] sm:text-xs px-2.5 py-0.5 shrink-0">{server.transport || 'N/A'}</Badge>
+                                                    <Badge variant="outline" className="capitalize py-0.5 px-3 rounded-full border-border/60 text-[10px] sm:text-xs shrink-0">
                                                         {server.visibility === 'public' ? (
                                                             <div className="flex items-center gap-1">
-                                                                <HugeiconsIcon icon={Globe02Icon} size={12} />
+                                                                <HugeiconsIcon icon={Globe02Icon} size={10} />
                                                                 <span>Public</span>
                                                             </div>
                                                         ) : (
                                                             <div className="flex items-center gap-1">
-                                                                <HugeiconsIcon icon={LockedIcon} size={12} />
+                                                                <HugeiconsIcon icon={LockedIcon} size={10} />
                                                                 <span>Private</span>
                                                             </div>
                                                         )}
@@ -348,12 +352,12 @@ const MCPPage: React.FC = () => {
                                                 </div>
                                             </div>
                                             <Button
-                                                className="w-full rounded-full group/btn"
+                                                className="w-full rounded-full group/btn h-9 sm:h-10 text-xs sm:text-sm mt-1"
                                                 variant="secondary"
                                                 onClick={() => handleExploreTools(server)}
                                             >
                                                 Explore Tools
-                                                <HugeiconsIcon icon={ArrowRight01Icon} className="ml-2 size-4 group-hover/btn:translate-x-1 transition-transform" />
+                                                <HugeiconsIcon icon={ArrowRight01Icon} className="ml-2 size-3.5 sm:size-4 group-hover/btn:translate-x-1 transition-transform" />
                                             </Button>
                                         </div>
                                     </CardContent>

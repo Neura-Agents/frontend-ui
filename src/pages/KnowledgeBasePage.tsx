@@ -327,11 +327,13 @@ const KnowledgeBasePage: React.FC = () => {
                         </div>
                     </div>
                 ) : knowledgeBases.map((kb) => (
-                    <Card key={kb.id} className="flex flex-col h-full hover:border-primary/40 transition-all group border-border relative">
-                        <CardHeader>
-                            <div className="flex items-start justify-between">
-                                <CardTitle className="text-xl">{kb.name}</CardTitle>
-                                <div className="flex items-center gap-1">
+                    <Card key={kb.id} className="flex flex-col h-full hover:border-primary/40 transition-all group border-border relative min-w-0">
+                        <CardHeader className="pb-3 min-w-0">
+                            <div className="flex flex-wrap items-start justify-between gap-3 min-w-0 mb-2">
+                                <CardTitle className="text-lg sm:text-xl font-season-mix tracking-tight truncate flex-1 min-w-0">
+                                    {kb.name}
+                                </CardTitle>
+                                <div className="flex items-center gap-1 shrink-0 ml-auto">
                                     {user?.id && kb.user_id && String(user.id).toLowerCase() === String(kb.user_id).toLowerCase() && (
                                         <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
                                             <Tooltip>
@@ -346,7 +348,7 @@ const KnowledgeBasePage: React.FC = () => {
                                                             setIsQueryDialogOpen(true);
                                                         }}
                                                     >
-                                                        <HugeiconsIcon icon={PlayIcon} size={16} />
+                                                        <HugeiconsIcon icon={PlayIcon} size={14} />
                                                     </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
@@ -366,7 +368,7 @@ const KnowledgeBasePage: React.FC = () => {
                                                             setIsEditDialogOpen(true);
                                                         }}
                                                     >
-                                                        <HugeiconsIcon icon={PencilEdit02Icon} size={16} />
+                                                        <HugeiconsIcon icon={PencilEdit02Icon} size={14} />
                                                     </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
@@ -382,7 +384,7 @@ const KnowledgeBasePage: React.FC = () => {
                                                         className="h-7 w-7 rounded-full hover:bg-destructive/20 hover:text-destructive"
                                                         onClick={(e) => handleDeleteKB(kb, e)}
                                                     >
-                                                        <HugeiconsIcon icon={Delete02Icon} size={16} />
+                                                        <HugeiconsIcon icon={Delete02Icon} size={14} />
                                                     </Button>
                                                 </TooltipTrigger>
                                                 <TooltipContent>
@@ -393,46 +395,48 @@ const KnowledgeBasePage: React.FC = () => {
                                     )}
                                 </div>
                             </div>
-                            <CardDescription className="line-clamp-2 min-h-[40px] text-sm leading-relaxed">{kb.description}</CardDescription>
+                            <CardDescription className="line-clamp-2 min-h-[40px] text-xs sm:text-sm leading-relaxed">
+                                {kb.description}
+                            </CardDescription>
                         </CardHeader>
-                        <CardContent className="mt-auto">
-                            <div className="flex items-center justify-between text-xs text-muted-foreground py-2">
-                                <div className="flex items-center gap-1.5 bg-muted/30 py-1 px-2 rounded-md">
-                                    <HugeiconsIcon icon={Folder01Icon} size={14} />
+                        <CardContent className="mt-auto min-w-0">
+                            <div className="flex flex-wrap items-center justify-between text-[10px] sm:text-xs text-muted-foreground py-2 gap-2 min-w-0">
+                                <div className="flex items-center gap-1.5 bg-muted/30 py-1 px-2.5 rounded-md shrink-0">
+                                    <HugeiconsIcon icon={Folder01Icon} size={12} />
                                     <span className="font-medium text-foreground/80">{kb.documentCount} Docs</span>
                                 </div>
-                                <div className="flex items-center gap-1.5">
-                                    <HugeiconsIcon icon={Calendar03Icon} size={14} />
+                                <div className="flex items-center gap-1.5 shrink-0 ml-auto">
+                                    <HugeiconsIcon icon={Calendar03Icon} size={12} />
                                     <span>{kb.lastUpdated}</span>
                                 </div>
                             </div>
-                            <div className='pb-2 flex flex-row items-center gap-2'>
-                                <Badge variant={getStatusVariant(kb.status)} className="capitalize py-0.5 px-2.5 rounded-full">
+                            <div className='pb-4 flex flex-wrap items-center gap-2 min-w-0'>
+                                <Badge variant={getStatusVariant(kb.status)} className="capitalize py-0.5 px-2.5 rounded-full text-[10px] sm:text-xs shrink-0">
                                     {kb.status}
                                 </Badge>
-                                <Badge variant="outline" className="capitalize py-0.5 px-2.5 rounded-full">
+                                <Badge variant="outline" className="capitalize py-0.5 px-3 rounded-full border-border/60 text-[10px] sm:text-xs shrink-0">
                                     {kb.visibility === 'public' ? (
                                         <div className="flex items-center gap-1">
-                                            <HugeiconsIcon icon={Globe02Icon} size={12} />
+                                            <HugeiconsIcon icon={Globe02Icon} size={10} />
                                             <span>Public</span>
                                         </div>
                                     ) : (
                                         <div className="flex items-center gap-1">
-                                            <HugeiconsIcon icon={LockedIcon} size={12} />
+                                            <HugeiconsIcon icon={LockedIcon} size={10} />
                                             <span>Private</span>
                                         </div>
                                     )}
                                 </Badge>
                             </div>
                             <Button
-                                className="w-full rounded-full group/btn"
+                                className="w-full rounded-full group/btn h-9 sm:h-10 text-xs sm:text-sm"
                                 variant="secondary"
                                 onClick={() => handleExplore(kb)}
                             >
                                 Explore Knowledge Base
                                 <HugeiconsIcon
                                     icon={ArrowRight01Icon}
-                                    size={16}
+                                    size={14}
                                     className="group-hover/btn:translate-x-1 transition-transform"
                                 />
                             </Button>
