@@ -8,6 +8,8 @@
     "dev:public": "VITE_APP_MODE=public vite --port 7999",
     "dev:dashboard": "VITE_APP_MODE=dashboard vite --port 8005",
     "build": "tsc -b && vite build",
+    "build:public": "VITE_APP_MODE=public tsc -b && VITE_APP_MODE=public vite build --outDir dist/public",
+    "build:dashboard": "VITE_APP_MODE=dashboard tsc -b && VITE_APP_MODE=dashboard vite build --outDir dist/dashboard",
     "lint": "eslint .",
     "preview": "vite preview"
   },
