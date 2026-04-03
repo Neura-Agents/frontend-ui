@@ -165,7 +165,7 @@ const UsagePage: React.FC = () => {
         const timer = setTimeout(() => {
             setDebouncedSearch(searchQuery);
             fetchData(1, searchQuery);
-            
+
             setSearchParams(prev => {
                 const next = new URLSearchParams(prev);
                 if (searchQuery) next.set('q', searchQuery);
@@ -350,7 +350,7 @@ const UsagePage: React.FC = () => {
 
                 {/* ─── METRICS ─── */}
                 <section className='grid grid-cols-1 md:grid-cols-2 gap-6'>
-                    <Card className='border-border shadow-sm w-full overflow-hidden'>
+                    <Card className='border-border w-full overflow-hidden'>
                         <CardHeader className="pb-2 flex flex-row items-center justify-between space-y-0">
                             <CardTitle className="text-sm font-medium text-muted-foreground">
                                 Total Spend
@@ -390,7 +390,7 @@ const UsagePage: React.FC = () => {
                         </CardContent>
                     </Card>
 
-                    <Card className='border-border shadow-sm w-full'>
+                    <Card className='border-border w-full'>
                         <CardHeader className="pb-2">
                             <CardTitle className="text-sm font-medium text-muted-foreground">
                                 Total Requests

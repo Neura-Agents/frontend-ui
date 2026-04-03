@@ -34,7 +34,7 @@ export function SpendTrendsChart({ data, dateRange, currency = 'USD', rate = 1 }
     // Process data to aggregate spend per day, filling with 0s for missing days
     const aggregatedData = React.useMemo(() => {
         const dailySpends: Record<string, number> = {};
-        
+
         // 1. Map existing data
         data.forEach(item => {
             const dateStr = format(new Date(item.created_at), 'yyyy-MM-dd');
@@ -73,7 +73,7 @@ export function SpendTrendsChart({ data, dateRange, currency = 'USD', rate = 1 }
     }, [data, dateRange, rate, currency]);
 
     return (
-        <Card className="border-border/40 shadow-sm">
+        <Card className="border-border">
             <CardHeader>
                 <CardTitle>Spend Trends</CardTitle>
             </CardHeader>

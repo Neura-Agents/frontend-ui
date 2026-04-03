@@ -32,6 +32,7 @@ import {
     Search02Icon,
     Logout01Icon,
     ArrowDown01Icon,
+    ArrowDownDoubleIcon,
     PaintBoardIcon
 } from "@hugeicons/core-free-icons";
 import { useAuth } from "@/context/AuthContext";
@@ -65,7 +66,7 @@ import { mcpService } from "@/services/mcpService";
 import { knowledgeService } from "@/services/knowledgeService";
 import { useNavigation } from "@/context/NavigationContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useUmami } from "@/hooks/useUmami";
 
 const ICON_MAP: Record<string, any> = {
@@ -114,10 +115,31 @@ export function AppSidebar() {
     const { track } = useUmami();
     const location = useLocation();
     const { sidebar: navGroups, loading: isLoadingNav } = useNavigation();
-    
     const [open, setOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState("All");
     const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
+    const contentRef = useRef<HTMLDivElement>(null);
+    const [isAtBottom, setIsAtBottom] = useState(true);
+
+    const checkScroll = useCallback(() => {
+        if (!contentRef.current) return;
+        const { scrollHeight, scrollTop, clientHeight } = contentRef.current;
+        const buffer = 10;
+        // If scrollHeight is close to clientHeight, it's not scrollable
+        const scrollable = scrollHeight > clientHeight + buffer;
+        const atBottom = scrollHeight - scrollTop <= clientHeight + buffer;
+        setIsAtBottom(!scrollable || atBottom);
+    }, []);
+
+    useEffect(() => {
+        // Initial check after a short delay to account for list rendering
+        const timer = setTimeout(checkScroll, 100);
+        window.addEventListener('resize', checkScroll);
+        return () => {
+            clearTimeout(timer);
+            window.removeEventListener('resize', checkScroll);
+        };
+    }, [checkScroll, navGroups, collapsedGroups, state, isLoadingNav]);
     const [searchValue, setSearchValue] = useState("");
     const [isSearching, setIsSearching] = useState(false);
     const [results, setResults] = useState<{
@@ -226,7 +248,11 @@ export function AppSidebar() {
                     </div>
                 </SidebarHeader>
 
-                <SidebarContent className="py-2">
+                <SidebarContent
+                    ref={contentRef}
+                    onScroll={checkScroll}
+                    className="py-2"
+                >
                     {isLoadingNav ? (
                         <div className="flex flex-col gap-8 px-2 py-4 animate-pulse">
                             {[1, 2, 3].map((group) => (
@@ -256,94 +282,109 @@ export function AppSidebar() {
                     ) : (
                         groupedNavItems.map((group: any, index: number) => {
                             const isCollapsed = collapsedGroups.includes(group.label);
-                        const isCollapsible = group.collapsible !== false;
+                            const isCollapsible = group.collapsible !== false;
 
-                        return (
-                            <SidebarGroup key={`${group.label}-${index}`} className="py-2">
-                                {group.label && (
-                                    <SidebarGroupLabel
-                                        className={cn(
-                                            "px-3 tracking-wider flex items-center justify-between group whitespace-nowrap flex-nowrap",
-                                            isCollapsible && state === "expanded" && "cursor-pointer hover:text-muted-foreground/80 transition-colors"
-                                        )}
-                                        onClick={() => isCollapsible && state === "expanded" && toggleGroup(group.label)}
-                                    >
-                                        <span className="text-sm">{group.label}</span>
-                                        {isCollapsible && (
+                            return (
+                                <SidebarGroup key={`${group.label}-${index}`} className="py-2">
+                                    {group.label && (
+                                        <SidebarGroupLabel
+                                            className={cn(
+                                                "px-3 tracking-wider flex items-center justify-between group whitespace-nowrap flex-nowrap",
+                                                isCollapsible && state === "expanded" && "cursor-pointer hover:text-muted-foreground/80 transition-colors"
+                                            )}
+                                            onClick={() => isCollapsible && state === "expanded" && toggleGroup(group.label)}
+                                        >
+                                            <span className="text-sm">{group.label}</span>
+                                            {isCollapsible && (
+                                                <motion.div
+                                                    animate={{ rotate: isCollapsed ? -90 : 0 }}
+                                                    transition={{ duration: 0.2 }}
+                                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                >
+                                                    <HugeiconsIcon icon={ArrowDown01Icon} size={12} />
+                                                </motion.div>
+                                            )}
+                                        </SidebarGroupLabel>
+                                    )}
+                                    <AnimatePresence initial={false}>
+                                        {!isCollapsed && (
                                             <motion.div
-                                                animate={{ rotate: isCollapsed ? -90 : 0 }}
-                                                transition={{ duration: 0.2 }}
-                                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                                initial={state === "expanded" ? { height: 0, opacity: 0 } : false}
+                                                animate={{ height: "auto", opacity: 1 }}
+                                                exit={{ height: 0, opacity: 0 }}
+                                                transition={{ duration: 0.2, ease: "easeInOut" }}
+                                                className="overflow-hidden"
                                             >
-                                                <HugeiconsIcon icon={ArrowDown01Icon} size={12} />
+                                                <SidebarGroupContent>
+                                                    <SidebarMenu>
+                                                        {group.items.map((item: any) => {
+                                                            const Content = (
+                                                                <div className={cn(
+                                                                    "flex items-center w-full",
+                                                                    state === "collapsed" ? "justify-center" : "justify-start gap-2"
+                                                                )}>
+                                                                    <HugeiconsIcon icon={item.icon} />
+                                                                    {state === "expanded" && <span>{item.title}</span>}
+                                                                </div>
+                                                            );
+
+                                                            const isActive = "url" in item && location.pathname === item.url;
+
+                                                            return (
+                                                                <MaybeTooltip key={item.title} title={item.title}>
+                                                                    {"url" in item ? (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="lg"
+                                                                            asChild
+                                                                            onClick={() => track('sidebar-item-click', { title: item.title, url: item.url })}
+                                                                            className={cn(
+                                                                                state === "collapsed" ? "justify-center px-0 gap-0 w-full rounded-full" : "justify-start gap-3 rounded-full",
+                                                                                isActive && "bg-muted text-foreground"
+                                                                            )}
+                                                                        >
+                                                                            <Link to={item.url as string}>
+                                                                                {Content}
+                                                                            </Link>
+                                                                        </Button>
+                                                                    ) : (
+                                                                        <Button
+                                                                            variant="ghost"
+                                                                            size="lg"
+                                                                            onClick={item.onClick}
+                                                                            className={state === "collapsed" ? "justify-center px-0 gap-0 w-full rounded-full hover:cursor-pointer" : "justify-start gap-3 rounded-full hover:cursor-pointer"}
+                                                                        >
+                                                                            {Content}
+                                                                        </Button>
+                                                                    )}
+                                                                </MaybeTooltip>
+                                                            );
+                                                        })}
+                                                    </SidebarMenu>
+                                                </SidebarGroupContent>
                                             </motion.div>
                                         )}
-                                    </SidebarGroupLabel>
-                                )}
-                                <AnimatePresence initial={false}>
-                                    {!isCollapsed && (
-                                        <motion.div
-                                            initial={state === "expanded" ? { height: 0, opacity: 0 } : false}
-                                            animate={{ height: "auto", opacity: 1 }}
-                                            exit={{ height: 0, opacity: 0 }}
-                                            transition={{ duration: 0.2, ease: "easeInOut" }}
-                                            className="overflow-hidden"
-                                        >
-                                            <SidebarGroupContent>
-                                                <SidebarMenu>
-                                                    {group.items.map((item: any) => {
-                                                        const Content = (
-                                                            <div className={cn(
-                                                                "flex items-center w-full",
-                                                                state === "collapsed" ? "justify-center" : "justify-start gap-2"
-                                                            )}>
-                                                                <HugeiconsIcon icon={item.icon} />
-                                                                {state === "expanded" && <span>{item.title}</span>}
-                                                            </div>
-                                                        );
-
-                                                        const isActive = "url" in item && location.pathname === item.url;
-
-                                                        return (
-                                                            <MaybeTooltip key={item.title} title={item.title}>
-                                                                {"url" in item ? (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="lg"
-                                                                        asChild
-                                                                        onClick={() => track('sidebar-item-click', { title: item.title, url: item.url })}
-                                                                        className={cn(
-                                                                            state === "collapsed" ? "justify-center px-0 gap-0 w-full rounded-full" : "justify-start gap-3 rounded-full",
-                                                                            isActive && "bg-muted text-foreground"
-                                                                        )}
-                                                                    >
-                                                                        <Link to={item.url as string}>
-                                                                            {Content}
-                                                                        </Link>
-                                                                    </Button>
-                                                                ) : (
-                                                                    <Button
-                                                                        variant="ghost"
-                                                                        size="lg"
-                                                                        onClick={item.onClick}
-                                                                        className={state === "collapsed" ? "justify-center px-0 gap-0 w-full rounded-full hover:cursor-pointer" : "justify-start gap-3 rounded-full hover:cursor-pointer"}
-                                                                    >
-                                                                        {Content}
-                                                                    </Button>
-                                                                )}
-                                                            </MaybeTooltip>
-                                                        );
-                                                    })}
-                                                </SidebarMenu>
-                                            </SidebarGroupContent>
-                                        </motion.div>
-                                    )}
-                                </AnimatePresence>
-                            </SidebarGroup>
-                        );
-                    })
-                )}
+                                    </AnimatePresence>
+                                </SidebarGroup>
+                            );
+                        })
+                    )}
                 </SidebarContent>
+                <AnimatePresence>
+                    {!isAtBottom && (
+                        <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="absolute bottom-10 left-0 right-0 h-32 bg-linear-to-t from-background via-background/90 to-transparent z-20 pointer-events-none flex flex-col items-center justify-end pb-8"
+                        >
+                            <div className="animate-bounce text-muted-foreground">
+                                <HugeiconsIcon icon={ArrowDownDoubleIcon} size={16} />
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 <SidebarFooter className="border-0">
                     {user && (
@@ -398,8 +439,8 @@ export function AppSidebar() {
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem asChild>
                                                             <Link to="/theme-settings" className="flex items-center gap-2 cursor-pointer">
-                                                                 <HugeiconsIcon icon={Settings01Icon} className="size-4" />
-                                                                 <span>Theme Settings</span>
+                                                                <HugeiconsIcon icon={Settings01Icon} className="size-4" />
+                                                                <span>Theme Settings</span>
                                                             </Link>
                                                         </DropdownMenuItem>
                                                     </>

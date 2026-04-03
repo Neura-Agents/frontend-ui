@@ -31,7 +31,7 @@ interface RequestsChartProps {
 export function RequestsChart({ data, dateRange }: RequestsChartProps) {
     const aggregatedData = React.useMemo(() => {
         const dailyRequests: Record<string, number> = {};
-        
+
         // 1. Map existing data
         data.forEach(item => {
             const dateStr = format(new Date(item.created_at), 'yyyy-MM-dd');
@@ -70,7 +70,7 @@ export function RequestsChart({ data, dateRange }: RequestsChartProps) {
     }, [data, dateRange]);
 
     return (
-        <Card className="border-border/40 shadow-sm">
+        <Card className="border-border">
             <CardHeader>
                 <CardTitle>Total Requests</CardTitle>
             </CardHeader>
