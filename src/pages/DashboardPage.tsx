@@ -6,6 +6,7 @@ import { HugeiconsIcon } from '@hugeicons/react';
 import { Wallet03Icon } from '@hugeicons/core-free-icons';
 import { billingService } from '@/services/billingService';
 import { Link } from 'react-router-dom';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const DashboardPage: React.FC = () => {
     const { user } = useAuth();
@@ -41,7 +42,14 @@ const DashboardPage: React.FC = () => {
                     </div>
                 </div>
                 <Link to="/billing">
-                    <Button className='rounded-full px-4 py-4' variant='outline'><HugeiconsIcon icon={Wallet03Icon} /> {loading ? '...' : balance.toFixed(2)} Credits </Button>
+                    <Button className='rounded-full px-4 py-4' variant='outline'>
+                        <HugeiconsIcon icon={Wallet03Icon} /> 
+                        {loading ? (
+                            <Skeleton className="h-4 w-12 ml-2" />
+                        ) : (
+                            <span className="ml-2">{balance.toFixed(2)} Credits</span>
+                        )}
+                    </Button>
                 </Link>
             </section>
         </div>

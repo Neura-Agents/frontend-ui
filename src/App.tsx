@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'r
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { AlertProvider, useAlert } from './context/AlertContext';
 import { ThemeProvider } from './context/ThemeContext';
+import UmamiAnalytics from './components/UmamiAnalytics';
 import Layout from './components/layout/Layout';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import LandingPage from './pages/LandingPage';
@@ -29,6 +30,7 @@ import SystemPromptsPage from './pages/SystemPromptsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardPage from './pages/DashboardPage';
 
+const APP_MODE = (import.meta.env.VITE_APP_MODE as 'public' | 'dashboard') || 'dashboard';
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; role?: string }> = ({ children, role }) => {
   const { user, loading, hasRole, login } = useAuth();
@@ -61,28 +63,42 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode; role?: string }> = (
 };
 
 function AppRoutes() {
-  const { user } = useAuth();
+
+  // Mode-based routing logic
+  if (APP_MODE === 'public') {
+    return (
+      <Routes>
+        <Route element={<Layout />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/about" element={<AboutUsPage />} />
+          <Route path="/pricing" element={<PricingPage />} />
+          {/* If the user is logged in and on the public site, we might want a redirect? 
+              But for now, all other routes on 7999 go to 404 or redirect back to home. */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    );
+  }
+
+  // Dashboard / App Mode (Port 8000)
   return (
     <Routes>
       <Route element={<Layout />}>
+        {/* If unauthenticated on dashboard home, we land on landing page or redirect to login.
+            The user said "everything remains the same", but on 8000 we don't have LandingPage really.
+            Actually, if they land on 8000 and NOT logged in, we should probably redirect to 7999
+            OR just let the ProtectedRoute trigger a login. */}
         <Route path="/" element={
-          user ?
-            <ProtectedRoute role="platform-users">
-              <DashboardPage />
-            </ProtectedRoute>
-            :
-            <LandingPage />
+          <ProtectedRoute role="platform-users">
+            <DashboardPage />
+          </ProtectedRoute>
         } />
-        {
-          !user &&
-          <Route
-            path="/about"
-            element={
-              <AboutUsPage />
-            }
-          />
-        }
-        <Route path="/profile" element={<Profile />} />
+
+        <Route path="/profile" element={
+          <ProtectedRoute role="platform-users">
+            <Profile />
+          </ProtectedRoute>
+        } />
         <Route
           path="/design-system"
           element={
@@ -164,12 +180,10 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        <Route
-          path="/pricing"
-          element={
-            <PricingPage />
-          }
-        />
+        {/* Pricing/About are still conceptually available but maybe shouldn't be the focus here.
+            But for completeness, let's keep them if they are on 8000 too. */}
+        <Route path="/pricing" element={<PricingPage />} />
+
         <Route
           path="/billing"
           element={
@@ -226,7 +240,6 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        {/* Fallback route */}
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
@@ -240,7 +253,9 @@ function App() {
         <AlertProvider>
           <TooltipProvider delayDuration={400}>
             <AuthProvider>
-              <AppRoutes />
+              <UmamiAnalytics>
+                <AppRoutes />
+              </UmamiAnalytics>
             </AuthProvider>
           </TooltipProvider>
         </AlertProvider>

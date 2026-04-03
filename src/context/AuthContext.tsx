@@ -2,7 +2,10 @@ import { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { authService, type User } from '../services/authService';
 import { setAuthToken } from '../api/client';
 
+const APP_MODE = (import.meta.env.VITE_APP_MODE as 'public' | 'dashboard') || 'dashboard';
+
 const decodeToken = (token: string) => {
+    if (APP_MODE === 'public') return null;
     try {
         const base64Url = token.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -35,6 +38,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const fetching = useRef(false);
 
     useEffect(() => {
+        if (APP_MODE === 'public') {
+            setLoading(false);
+            return;
+        }
+
         const fetchUser = async () => {
             if (fetching.current) return;
             fetching.current = true;

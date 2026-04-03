@@ -196,6 +196,19 @@ const CreateEditAgentPage: React.FC<CreateEditAgentPageProps> = ({ isEdit = fals
         }, 1500);
     };
 
+    // Check if form is dirty (changed from default values), ignoring the model brain
+    const isDirty = 
+        agentName !== "" ||
+        agentVersion !== "1.0.0" ||
+        agentIcon !== "UserCircle02Icon" ||
+        description !== "" ||
+        systemPrompt !== "" ||
+        temperature[0] !== 0.7 ||
+        tags.length > 0 ||
+        visibility !== "private" ||
+        maxTokens[0] !== 2048 ||
+        selectedIds.size > 0;
+
     return (
         <>
             {/* Desktop Only View */}
@@ -239,7 +252,7 @@ const CreateEditAgentPage: React.FC<CreateEditAgentPageProps> = ({ isEdit = fals
                         />
                     </div>
                     <div className="flex gap-4">
-                        {!isEdit && (
+                        {!isEdit && isDirty && (
                             <Button
                                 variant="destructive"
                                 className="rounded-full gap-2 px-5"

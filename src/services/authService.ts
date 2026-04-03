@@ -101,7 +101,13 @@ export const authService = {
     login(idp: string = '', redirectTo: string = window.location.pathname + window.location.search) {
         const params = new URLSearchParams();
         if (idp) params.append('idp', idp);
-        if (redirectTo) params.append('redirect_to', `${window.location.origin}${redirectTo}`);
+
+        // Determine where to land after login
+        const origin = (import.meta.env.VITE_APP_MODE === 'public')
+            ? window.location.origin.replace(':7999', ':8005')
+            : window.location.origin;
+
+        if (redirectTo) params.append('redirect_to', `${origin}${redirectTo}`);
 
         const queryString = params.toString();
         window.location.href = `${KONG_URL}${BACKEND_URL}/auth/login${queryString ? `?${queryString}` : ''}`;
@@ -112,6 +118,10 @@ export const authService = {
     },
 
     logout(redirectTo: string = window.location.pathname + window.location.search) {
-        window.location.href = `${KONG_URL}${BACKEND_URL}/auth/logout${redirectTo ? `?redirect_to=${encodeURIComponent(redirectTo)}` : ''}`;
+        const origin = (import.meta.env.VITE_APP_MODE === 'dashboard')
+            ? window.location.origin.replace(':8005', ':7999')
+            : window.location.origin;
+            
+        window.location.href = `${KONG_URL}${BACKEND_URL}/auth/logout${redirectTo ? `?redirect_to=${encodeURIComponent(origin + redirectTo)}` : ''}`;
     }
 };
