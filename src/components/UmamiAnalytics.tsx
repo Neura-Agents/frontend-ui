@@ -55,6 +55,17 @@ const UmamiAnalytics: React.FC<{ children: React.ReactNode }> = ({ children }) =
     if (appMode === 'dashboard' && user?.id) {
        console.debug(`[Umami] Loading tracker with User ID: ${user.id}`);
        script.setAttribute('data-user-id', user.id);
+       
+       // Manual identification for richer metadata
+       script.onload = () => {
+         if ((window as any).umami) {
+           (window as any).umami.identify({
+             email: user.email,
+             username: user.preferred_username,
+             name: `${user.given_name || ''} ${user.family_name || ''}`.trim()
+           });
+         }
+       };
     }
     
     document.head.appendChild(script);

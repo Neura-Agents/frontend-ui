@@ -5,10 +5,12 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { billingService } from '@/services/billingService';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useUmami } from '@/hooks/useUmami';
 
 const BillingPage: React.FC = () => {
     const [balance, setBalance] = useState<number>(0);
     const [loading, setLoading] = useState(true);
+    const { track } = useUmami();
 
     const fetchBalance = async () => {
         try {
@@ -72,7 +74,12 @@ const BillingPage: React.FC = () => {
                         {showSkeleton ? (
                             <Skeleton className="h-8 w-32 rounded-full" />
                         ) : (
-                            <Button variant="default" className='rounded-full font-matter font-medium w-fit' size="sm" >
+                            <Button 
+                                variant="default" 
+                                className='rounded-full font-matter font-medium w-fit' 
+                                size="sm" 
+                                onClick={() => track('setup-auto-recharge-click')}
+                            >
                                 Setup Auto-Recharge
                             </Button>
                         )}

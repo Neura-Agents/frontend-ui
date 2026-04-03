@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import Footer from '@/components/landingPage/footer';
 import AboutSpacer from '@/components/aboutUs/AboutSpacer';
 import { platformService } from '@/services/platformService';
+import { useUmami } from '@/hooks/useUmami';
 
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 
@@ -25,6 +26,7 @@ const PricingPage: React.FC = () => {
     const [plans, setPlans] = useState<PricingCardProps[]>([]);
     const [faqs, setFaqs] = useState<{ question: string; answer: string }[]>([]);
     const [loading, setLoading] = useState(true);
+    const { track } = useUmami();
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -103,7 +105,17 @@ const PricingPage: React.FC = () => {
                         ))
                     ) : (
                         plans.map((data, index) => (
-                            <PricingCard key={index} {...data} />
+                            <PricingCard 
+                                key={index} 
+                                {...data} 
+                                onButtonClick={() => {
+                                    track('pricing-plan-select', { 
+                                        plan_category: data.category, 
+                                        plan_title: data.title 
+                                    });
+                                    if (data.onButtonClick) data.onButtonClick();
+                                }}
+                            />
                         ))
                     )}
                 </div>

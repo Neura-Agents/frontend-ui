@@ -19,7 +19,7 @@
   --success: oklch(0.65 0.22 174);
   --warning: oklch(0.75 0.18 70);
 
-  --logo-url: url('/src/assets/images/LogoAI-dark.svg');
+  --logo-url: url('/wormLogo-black.svg');
   --header-bg: var(--background);
   --header-glass-border: var(--border);
 }
@@ -43,7 +43,7 @@
   --ring: var(--primary);
   --success: oklch(0.65 0.22 174);
   --warning: oklch(0.75 0.18 70);
-  --logo-url: url('/src/assets/images/LogoAI-dark.svg');
+  --logo-url: url('/wormLogo-white.svg');
   --header-bg: var(--background);
   --header-glass-border: var(--border);
 }
@@ -67,7 +67,7 @@
   --ring: var(--primary);
   --success: oklch(0.6 0.15 150);
   --warning: oklch(0.7 0.15 70);
-  --logo-url: url('/src/assets/images/LogoAI-light.svg');
+  --logo-url: url('/wormLogo-black.svg');
   --header-bg: var(--background);
   --header-glass-border: var(--border);
 }
@@ -93,7 +93,7 @@
   --ring: var(--primary);
   --success: oklch(0.8 0.15 140);
   --warning: oklch(0.8 0.15 70);
-  --logo-url: url('/src/assets/images/LogoAI-dark.svg');
+  --logo-url: url('/wormLogo-white.svg');
   --header-bg: oklch(0.15 0.05 320 / 80%);
   --header-glass-border: var(--border);
 }
@@ -119,7 +119,7 @@
   --ring: var(--primary);
   --success: oklch(0.75 0.12 160);
   --warning: oklch(0.8 0.12 80);
-  --logo-url: url('/src/assets/images/LogoAI-dark.svg');
+  --logo-url: url('/wormLogo-white.svg');
   --header-bg: oklch(0.2 0.04 230 / 85%);
   --header-glass-border: var(--border);
 }
@@ -145,7 +145,7 @@
   --ring: var(--primary);
   --success: oklch(0.8 0.15 150);
   --warning: oklch(0.85 0.15 80);
-  --logo-url: url('/src/assets/images/LogoAI-dark.svg');
+  --logo-url: url('/wormLogo-white.svg');
   --header-bg: oklch(0.25 0.05 140 / 80%);
   --header-glass-border: var(--border);
 }
@@ -179,7 +179,7 @@
   --success: #22c55e;
   --warning: #f59e0b;
 
-  --logo-url: url('/src/assets/images/LogoAI-light.svg');
+  --logo-url: url('/wormLogo-black.svg');
 
   --header-bg: #ffffff;
   --header-glass-border: #e4e7ec;

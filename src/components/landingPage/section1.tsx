@@ -7,11 +7,13 @@ import { motion } from 'framer-motion';
 import type { Variants } from 'framer-motion';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation } from 'react-router-dom';
+import { useUmami } from '@/hooks/useUmami';
 
 const Section1: React.FC = () => {
     const { login } = useAuth();
     const location = useLocation();
     const from = location.state?.from || "/agents";
+    const { track } = useUmami();
 
     const containerVariants: Variants = {
         hidden: { opacity: 0 },
@@ -78,7 +80,10 @@ const Section1: React.FC = () => {
                 >
                     <Button
                         size="lg"
-                        onClick={() => login('', from)}
+                        onClick={() => {
+                            track('landing-hero-cta-click');
+                            login('', from);
+                        }}
                         className='rounded-full text-sm md:text-base px-6 py-4 md:py-6 font-semibold font-season-mix hover:cursor-pointer relative z-40'
                     >
                         Experience the future

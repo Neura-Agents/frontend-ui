@@ -5,6 +5,7 @@ import GlassElement from '../reusable/GlassElement';
 import { cn } from '@/lib/utils';
 import { useAuth } from '../../context/AuthContext';
 import { useLocation } from 'react-router-dom';
+import { useUmami } from '@/hooks/useUmami';
 
 const APP_NAME = import.meta.env.VITE_APP_NAME;
 
@@ -12,6 +13,7 @@ const Section4: React.FC = () => {
     const { login } = useAuth();
     const location = useLocation();
     const from = location.state?.from || "/agents";
+    const { track } = useUmami();
 
     // Configuration for background floating elements
     const floatingElements = [
@@ -83,7 +85,10 @@ const Section4: React.FC = () => {
                                 >
                                     <Button
                                         size="lg"
-                                        onClick={() => login('', from)}
+                                        onClick={() => {
+                                            track('landing-footer-cta-click');
+                                            login('', from);
+                                        }}
                                         className={cn(
                                             "rounded-full font-bold group cursor-pointer pointer-events-auto transition-all duration-300 shadow-xl",
                                             "bg-white/10 backdrop-blur-md border border-white/30 text-background",

@@ -26,6 +26,7 @@ import {
     DialogDescription
 } from '@/components/ui/dialog';
 import { knowledgeService, type KnowledgeBase, type KnowledgeGraph } from '@/services/knowledgeService';
+import { useUmami } from '@/hooks/useUmami';
 
 
 interface CapabilityItem {
@@ -54,6 +55,7 @@ const AgentCapabilities: React.FC<AgentCapabilitiesProps> = ({ selectedIds, setS
     const [isSelectionDialogOpen, setIsSelectionDialogOpen] = useState(false);
 
 
+    const { track } = useUmami();
     useEffect(() => {
         const timer = setTimeout(() => {
             const fetchData = async () => {
@@ -101,11 +103,13 @@ const AgentCapabilities: React.FC<AgentCapabilitiesProps> = ({ selectedIds, setS
 
     const toggleSelection = (id: string) => {
         const next = new Set(selectedIds);
-        if (next.has(id)) {
+        const isDeselect = next.has(id);
+        if (isDeselect) {
             next.delete(id);
         } else {
             next.add(id);
         }
+        track('capability-toggle', { id, action: isDeselect ? 'deselect' : 'select' });
         setSelectedIds(next);
     };
 
@@ -292,7 +296,10 @@ const AgentCapabilities: React.FC<AgentCapabilitiesProps> = ({ selectedIds, setS
                             <Button
                                 variant="default"
                                 size="sm"
-                                onClick={() => setIsSelectionDialogOpen(true)}
+                                onClick={() => {
+                                    setIsSelectionDialogOpen(true);
+                                    track('capability-preview-open');
+                                }}
                             >
                                 Preview
                             </Button>

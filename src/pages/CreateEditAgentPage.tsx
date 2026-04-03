@@ -16,6 +16,7 @@ import AgentCapabilities from '@/components/agents/AgentCapabilities';
 import AgentConfiguration from '@/components/agents/AgentConfiguration';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { agentsService, type AgentCapability } from '@/services/agentsService';
+import { useUmami } from '@/hooks/useUmami';
 import { useEffect } from 'react';
 
 interface CreateEditAgentPageProps {
@@ -27,6 +28,7 @@ const CreateEditAgentPage: React.FC<CreateEditAgentPageProps> = ({ isEdit = fals
     const { id } = useParams<{ id: string }>();
     const [searchParams, setSearchParams] = useSearchParams();
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { track } = useUmami();
 
     const [prompt, setPrompt] = useState("");
     const [isThinking, setIsThinking] = useState(false);
@@ -157,9 +159,11 @@ const CreateEditAgentPage: React.FC<CreateEditAgentPageProps> = ({ isEdit = fals
 
             if (isEdit && id) {
                 await agentsService.updateAgent(id, agentData);
+                track('agent-update', { agent_id: id, status });
                 alert("Agent updated successfully!");
             } else {
-                await agentsService.createAgent(agentData);
+                const newAgent = await agentsService.createAgent(agentData);
+                track('agent-create', { agent_id: newAgent?.id, status });
                 alert("Agent created successfully!");
             }
             navigate('/agents');
@@ -184,6 +188,7 @@ const CreateEditAgentPage: React.FC<CreateEditAgentPageProps> = ({ isEdit = fals
         setVisibility("private");
         setMaxTokens([2048]);
         setSelectedIds(new Set());
+        track('agent-form-reset');
     };
 
     const handleSend = () => {

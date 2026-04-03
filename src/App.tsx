@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NavigationProvider } from './context/NavigationContext';
 import { AlertProvider, useAlert } from './context/AlertContext';
 import { ThemeProvider } from './context/ThemeContext';
 import UmamiAnalytics from './components/UmamiAnalytics';
@@ -253,9 +254,11 @@ function App() {
         <AlertProvider>
           <TooltipProvider delayDuration={400}>
             <AuthProvider>
-              <UmamiAnalytics>
-                <AppRoutes />
-              </UmamiAnalytics>
+              <NavigationProvider>
+                <UmamiAnalytics>
+                  <AppRoutes />
+                </UmamiAnalytics>
+              </NavigationProvider>
             </AuthProvider>
           </TooltipProvider>
         </AlertProvider>

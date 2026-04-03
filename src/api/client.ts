@@ -27,8 +27,26 @@ apiClient.interceptors.request.use((config) => {
 });
 
 apiClient.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        if ((window as any).umami) {
+            (window as any).umami.track('api-success', {
+                url: response.config?.url,
+                method: response.config?.method,
+            });
+        }
+        return response;
+    },
     (error) => {
+        // Track the error in Umami
+        if ((window as any).umami) {
+            (window as any).umami.track('api-error', {
+                status: error.response?.status,
+                url: error.config?.url,
+                method: error.config?.method,
+                message: error.message
+            });
+        }
+        
         if (error.response?.status === 402) {
             const errorData = error.response.data;
             // Throw a more useful error object for 402s

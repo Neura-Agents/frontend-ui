@@ -3,6 +3,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { agentsService } from '@/services/agentsService';
 import { executionService, type ExecutionEvent, type ExecutionMessage } from '@/services/executionService';
+import { useUmami } from '@/hooks/useUmami';
 import { HugeiconsIcon } from '@hugeicons/react';
 import * as AllIcons from '@hugeicons/core-free-icons';
 import { Button } from '@/components/ui/button';
@@ -165,6 +166,7 @@ const AgentChatPage: React.FC = () => {
     const lastMessageCount = useRef(0);
     const [typingFinished, setTypingFinished] = useState<Record<string, boolean>>({});
     const initializedRef = useRef(false);
+    const { track } = useUmami();
 
     const scrollToBottom = (behavior: ScrollBehavior = "smooth", force = false) => {
         if (messagesEndRef.current && messagesContainerRef.current) {
@@ -194,6 +196,18 @@ const AgentChatPage: React.FC = () => {
                 const agentData = await agentsService.getAgentById(slug);
                 setAgent(agentData);
                 setLoading(false);
+
+                // Set document title
+                if (agentData?.name) {
+                    document.title = `${agentData.name} | Chat`;
+                }
+
+                // Track agent load
+                track('agent-chat-load', {
+                    agent_id: agentData.id,
+                    agent_name: agentData.name,
+                    agent_slug: slug
+                });
 
                 // Check for active workflows/resubscribe
                 const response = await executionService.getActiveWorkflows(slug);
@@ -272,6 +286,14 @@ const AgentChatPage: React.FC = () => {
             ...messages.map(m => ({ role: m.role, content: m.content })),
             { role: 'user', content: prompt }
         ];
+
+        // Track user message
+        track('message-sent', {
+            agent_id: agent?.id,
+            agent_name: agent?.name,
+            agent_slug: slug,
+            prompt_length: prompt.length
+        });
 
         try {
             await executionService.triggerAgent(slug, apiMessages, (event) => {
@@ -393,6 +415,17 @@ const AgentChatPage: React.FC = () => {
                         if (usage) {
                             newUsage = usage;
                         }
+
+                        // Track completion
+                        track('agent-execution-complete', {
+                            agent_id: agent?.id,
+                            agent_name: agent?.name,
+                            agent_slug: slug,
+                            workflow_id: newWorkflowId,
+                            status: newStatus,
+                            total_tokens: usage?.total_tokens,
+                            cost: usage?.cost
+                        });
                     } else if (event.type === 'Error' || event.type === 'error') {
                         newStatus = 'failed';
                         const errorMessage = internalData.message || metadata.message || 'Unknown error occurred';
@@ -436,6 +469,13 @@ const AgentChatPage: React.FC = () => {
             setIsStopping(true);
             try {
                 await executionService.cancelWorkflow(slug, currentWorkflowId);
+                // Track cancellation
+                track('agent-execution-cancelled', {
+                    agent_id: agent?.id,
+                    agent_name: agent?.name,
+                    agent_slug: slug,
+                    workflow_id: currentWorkflowId
+                });
             } catch (error) {
                 console.error('Failed to cancel workflow:', error);
                 setIsStopping(false);

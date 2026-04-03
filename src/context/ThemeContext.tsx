@@ -60,6 +60,9 @@ export function ThemeProvider({
     setTheme: (theme: ThemeId) => {
       localStorage.setItem(storageKey, theme);
       setTheme(theme);
+      if ((window as any).umami) {
+        (window as any).umami.track('theme-change', { theme });
+      }
     },
     availableThemes: themes,
     currentThemeConfig: themes.find(t => t.id === theme),

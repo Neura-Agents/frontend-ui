@@ -17,6 +17,7 @@ import {
     PlayIcon
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
+import { useUmami } from '@/hooks/useUmami';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Input } from '@/components/ui/input';
 import { KbDocumentsDialog } from '@/components/tools/dialogs/KbDocumentsDialog';
@@ -32,6 +33,7 @@ import { useAlert } from '@/context/AlertContext';
 const KnowledgeGraphPage: React.FC = () => {
     const { showAlert } = useAlert();
     const { user } = useAuth();
+    const { track } = useUmami();
     const [knowledgeGraphs, setKnowledgeGraphs] = useState<KnowledgeGraph[]>([]);
     const [totalItems, setTotalItems] = useState(0);
     const [page, setPage] = useState(1);
@@ -110,6 +112,13 @@ const KnowledgeGraphPage: React.FC = () => {
             const docs = await knowledgeService.getDocuments(kg.id);
             setDocuments(docs);
             setIsDocumentsDialogOpen(true);
+            
+            // Track exploration
+            track('kg-explore', {
+                kg_id: kg.id,
+                kg_name: kg.name,
+                doc_count: kg.documentCount
+            });
         } catch (error) {
             showAlert({ title: 'Error', description: 'Failed to fetch documents', variant: 'destructive' });
         }
@@ -122,6 +131,15 @@ const KnowledgeGraphPage: React.FC = () => {
                 await knowledgeService.uploadDocuments(newKG.id, 'graph', files);
             }
             showAlert({ title: 'Success', description: 'Knowledge graph created successfully', variant: 'success' });
+            
+            // Track creation
+            track('kg-create', {
+                kg_id: newKG.id,
+                kg_name: name,
+                file_count: files.length,
+                visibility
+            });
+            
             setIsCreateDialogOpen(false);
             fetchKnowledgeGraphs();
         } catch (error) {
@@ -149,6 +167,13 @@ const KnowledgeGraphPage: React.FC = () => {
                 try {
                     await knowledgeService.deleteKnowledgeGraph(kg.id);
                     showAlert({ title: 'Success', description: 'Knowledge graph deleted successfully', variant: 'success' });
+                    
+                    // Track deletion
+                    track('kg-delete', {
+                        kg_id: kg.id,
+                        kg_name: kg.name
+                    });
+                    
                     fetchKnowledgeGraphs();
                 } catch (error) {
                     showAlert({ title: 'Error', description: 'Failed to delete knowledge graph', variant: 'destructive' });
@@ -309,6 +334,12 @@ const KnowledgeGraphPage: React.FC = () => {
                                                             e.stopPropagation();
                                                             setTestKG(kg);
                                                             setIsQueryDialogOpen(true);
+                                                            
+                                                            // Track visualization
+                                                            track('kg-visualize', {
+                                                                kg_id: kg.id,
+                                                                kg_name: kg.name
+                                                            });
                                                         }}
                                                     >
                                                         <HugeiconsIcon icon={PlayIcon} size={16} />

@@ -1,8 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-
-const APP_NAME = import.meta.env.VITE_APP_NAME;
 interface LogoProps {
     className?: string;
     linkClassName?: string;
@@ -20,17 +18,17 @@ const Logo: React.FC<LogoProps> = ({
 }) => {
     const variantStyles = {
         sm: {
-            icon: 'size-5',
+            icon: 'h-5 w-20',
             text: 'text-lg',
             gap: 'gap-2'
         },
         md: {
-            icon: 'size-6',
+            icon: 'h-7 w-28',
             text: 'text-xl',
             gap: 'gap-3'
         },
         lg: {
-            icon: 'size-8',
+            icon: 'h-10 w-40',
             text: 'text-2xl',
             gap: 'gap-4'
         }
@@ -53,14 +51,20 @@ const Logo: React.FC<LogoProps> = ({
                     <div
                         className={cn(
                             styles.icon,
-                            "bg-contain bg-no-repeat bg-center transition-all duration-300 group-hover/logo:scale-110"
+                            "bg-foreground transition-all duration-300 group-hover/logo:scale-110"
                         )}
-                        style={{ backgroundImage: 'var(--logo-url)' }}
+                        style={{ 
+                            WebkitMaskImage: 'var(--logo-url)',
+                            maskImage: 'var(--logo-url)',
+                            WebkitMaskRepeat: 'no-repeat',
+                            maskRepeat: 'no-repeat',
+                            WebkitMaskSize: 'contain',
+                            maskSize: 'contain',
+                            WebkitMaskPosition: 'left',
+                            maskPosition: 'left'
+                        }}
                     />
                 )}
-                <span className="transition-all duration-300 group-hover/logo:scale-105 origin-left inline-block">
-                    {APP_NAME}
-                </span>
             </Link>
         </div>
     );

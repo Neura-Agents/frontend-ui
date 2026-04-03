@@ -63,9 +63,10 @@ import { agentsService } from "@/services/agentsService";
 import { toolsService } from "@/services/toolsService";
 import { mcpService } from "@/services/mcpService";
 import { knowledgeService } from "@/services/knowledgeService";
-import { platformService } from "@/services/platformService";
+import { useNavigation } from "@/context/NavigationContext";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useCallback } from "react";
+import { useUmami } from "@/hooks/useUmami";
 
 const ICON_MAP: Record<string, any> = {
     'Home09Icon': Home09Icon,
@@ -110,7 +111,10 @@ export function AppSidebar() {
     const { logout, user, hasRole } = useAuth();
     const { theme, setTheme } = useTheme();
     const { state } = useSidebar();
+    const { track } = useUmami();
     const location = useLocation();
+    const { sidebar: navGroups, loading: isLoadingNav } = useNavigation();
+    
     const [open, setOpen] = useState(false);
     const [activeFilter, setActiveFilter] = useState("All");
     const [collapsedGroups, setCollapsedGroups] = useState<string[]>([]);
@@ -129,22 +133,6 @@ export function AppSidebar() {
         kb: [],
         kg: []
     });
-    const [navGroups, setNavGroups] = useState<any[]>([]);
-    const [isLoadingNav, setIsLoadingNav] = useState(true);
-
-    useEffect(() => {
-        const fetchNav = async () => {
-            try {
-                const data = await platformService.getNavigation();
-                setNavGroups(data.sidebar);
-            } catch (error) {
-                console.error("Failed to fetch navigation:", error);
-            } finally {
-                setIsLoadingNav(false);
-            }
-        };
-        fetchNav();
-    }, []);
 
     const toggleGroup = (label: string) => {
         setCollapsedGroups(prev =>
@@ -177,6 +165,7 @@ export function AppSidebar() {
                 kb: kbData.items || [],
                 kg: kgData.items || []
             });
+            track('global-search-query-success', { query });
         } catch (error) {
             console.error("Global search failed:", error);
         } finally {
@@ -194,21 +183,14 @@ export function AppSidebar() {
     const handleSelect = (url: string, q?: string) => {
         setOpen(false);
         setSearchValue("");
+        track('global-search-select', { url, query: q });
         navigate(q ? `${url}?q=${encodeURIComponent(q)}` : url);
     };
 
     // Map the API data into the format expected by the UI, injecting the Search button if needed
     const groupedNavItems = navGroups.map(group => {
-        // Filter items based on user roles
-        const filteredItems = group.items.filter((item: any) => {
-            if (!item.role) return true;
-            return hasRole(item.role);
-        });
-
-        if (filteredItems.length === 0) return null;
-
         // Map icon strings to Hugeicons components and handle Search injection
-        const mappedItems = filteredItems.map((item: any) => ({
+        const mappedItems = group.items.map((item: any) => ({
             title: item.title,
             url: item.url,
             icon: ICON_MAP[item.icon] || Home09Icon
@@ -218,7 +200,10 @@ export function AppSidebar() {
         if (group.label === "Playground") {
             mappedItems.push({
                 title: "Search",
-                onClick: () => setOpen(true),
+                onClick: () => {
+                    setOpen(true);
+                    track('global-search-open');
+                },
                 icon: Search02Icon
             } as any);
         }
@@ -326,6 +311,7 @@ export function AppSidebar() {
                                                                         variant="ghost"
                                                                         size="lg"
                                                                         asChild
+                                                                        onClick={() => track('sidebar-item-click', { title: item.title, url: item.url })}
                                                                         className={cn(
                                                                             state === "collapsed" ? "justify-center px-0 gap-0 w-full rounded-full" : "justify-start gap-3 rounded-full",
                                                                             isActive && "bg-muted text-foreground"
@@ -412,8 +398,8 @@ export function AppSidebar() {
                                                         <DropdownMenuSeparator />
                                                         <DropdownMenuItem asChild>
                                                             <Link to="/theme-settings" className="flex items-center gap-2 cursor-pointer">
-                                                                <HugeiconsIcon icon={Settings01Icon} className="size-4" />
-                                                                <span>Theme Settings</span>
+                                                                 <HugeiconsIcon icon={Settings01Icon} className="size-4" />
+                                                                 <span>Theme Settings</span>
                                                             </Link>
                                                         </DropdownMenuItem>
                                                     </>

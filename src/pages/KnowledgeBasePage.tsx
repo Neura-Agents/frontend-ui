@@ -29,10 +29,12 @@ import { knowledgeService, type KnowledgeBase, type KnowledgeDocument } from '@/
 import { useAlert } from '@/context/AlertContext';
 import { ExecuteToolDialog } from '@/components/tools/dialogs/ExecuteToolDialog';
 import { PlayIcon } from '@hugeicons/core-free-icons';
+import { useUmami } from '@/hooks/useUmami';
 
 const KnowledgeBasePage: React.FC = () => {
     const { user } = useAuth();
     const { showAlert } = useAlert();
+    const { track } = useUmami();
     const [knowledgeBases, setKnowledgeBases] = useState<KnowledgeBase[]>([]);
     const [totalItems, setTotalItems] = useState(0);
     const [page, setPage] = useState(1);
@@ -111,6 +113,13 @@ const KnowledgeBasePage: React.FC = () => {
             const docs = await knowledgeService.getDocuments(kb.id);
             setDocuments(docs);
             setIsDocumentsDialogOpen(true);
+            
+            // Track exploration
+            track('kb-explore', {
+                kb_id: kb.id,
+                kb_name: kb.name,
+                doc_count: kb.documentCount
+            });
         } catch (error) {
             showAlert({ title: 'Error', description: 'Failed to fetch documents', variant: 'destructive' });
         }
@@ -123,6 +132,15 @@ const KnowledgeBasePage: React.FC = () => {
                 await knowledgeService.uploadDocuments(newKB.id, 'base', files);
             }
             showAlert({ title: 'Success', description: 'Knowledge base created successfully', variant: 'success' });
+            
+            // Track creation
+            track('kb-create', {
+                kb_id: newKB.id,
+                kb_name: name,
+                file_count: files.length,
+                visibility
+            });
+            
             setIsCreateDialogOpen(false);
             fetchKnowledgeBases();
         } catch (error: any) {
@@ -158,6 +176,13 @@ const KnowledgeBasePage: React.FC = () => {
                 try {
                     await knowledgeService.deleteKnowledgeBase(kb.id);
                     showAlert({ title: 'Success', description: 'Knowledge base deleted successfully', variant: 'success' });
+                    
+                    // Track deletion
+                    track('kb-delete', {
+                        kb_id: kb.id,
+                        kb_name: kb.name
+                    });
+                    
                     fetchKnowledgeBases();
                 } catch (error) {
                     showAlert({ title: 'Error', description: 'Failed to delete knowledge base', variant: 'destructive' });
@@ -482,7 +507,16 @@ const KnowledgeBasePage: React.FC = () => {
                 onExecute={async (_name, params) => {
                     if (!testKB) return;
                     try {
-                        return await knowledgeService.queryKnowledgeBase(testKB.id, params.query, params.limit);
+                        const result = await knowledgeService.queryKnowledgeBase(testKB.id, params.query, params.limit);
+                        
+                        // Track query
+                        track('kb-query', {
+                            kb_id: testKB.id,
+                            kb_name: testKB.name,
+                            query_length: params.query.length
+                        });
+                        
+                        return result;
                     } catch (error: any) {
                         if (error.status === 402) {
                             showAlert({ 
