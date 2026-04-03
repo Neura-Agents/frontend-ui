@@ -5,7 +5,9 @@ export * from '../models/auth';
 
 const BACKEND_URL = '/backend';
 
-const KONG_URL = import.meta.env.VITE_API_URL;
+import { themes } from '../theme/themes';
+
+const KONG_URL = import.meta.env.VITE_KONG_URL || 'http://localhost:8000';
 export const authService = {
     async checkAuth(): Promise<{ user: User | null; token: string | null }> {
         try {
@@ -102,6 +104,14 @@ export const authService = {
         const params = new URLSearchParams();
         if (idp) params.append('idp', idp);
 
+        // Map theme ID to className for Keycloak compatibility
+        // If the current theme is already a className (like 'cyberpunk'), use it.
+        // Otherwise look it up from the themes config.
+        const currentThemeId = localStorage.getItem('neura-theme') || 'dark';
+        const themeConfig = themes.find(t => t.id === currentThemeId) || themes.find(t => t.className === currentThemeId);
+        const themeClass = themeConfig ? themeConfig.className : currentThemeId;
+        params.append('theme', themeClass);
+
         // Determine where to land after login
         const origin = (import.meta.env.VITE_APP_MODE === 'public')
             ? window.location.origin.replace(':7999', ':8005')
@@ -114,14 +124,34 @@ export const authService = {
     },
 
     register() {
-        window.location.href = `${KONG_URL}${BACKEND_URL}/auth/login?action=register`;
+        const params = new URLSearchParams();
+        params.append('action', 'register');
+
+        // Map theme ID to className for Keycloak compatibility
+        const currentThemeId = localStorage.getItem('neura-theme') || 'dark';
+        const themeConfig = themes.find(t => t.id === currentThemeId) || themes.find(t => t.className === currentThemeId);
+        const themeClass = themeConfig ? themeConfig.className : currentThemeId;
+        params.append('theme', themeClass);
+
+        const origin = (import.meta.env.VITE_APP_MODE === 'public')
+            ? window.location.origin.replace(':7999', ':8005')
+            : window.location.origin;
+        params.append('redirect_to', origin);
+
+        const queryString = params.toString();
+        window.location.href = `${KONG_URL}${BACKEND_URL}/auth/login${queryString ? `?${queryString}` : ''}`;
     },
 
     logout(redirectTo: string = window.location.pathname + window.location.search) {
         const origin = (import.meta.env.VITE_APP_MODE === 'dashboard')
             ? window.location.origin.replace(':8005', ':7999')
             : window.location.origin;
-            
-        window.location.href = `${KONG_URL}${BACKEND_URL}/auth/logout${redirectTo ? `?redirect_to=${encodeURIComponent(origin + redirectTo)}` : ''}`;
+
+        // Map theme ID to className for Keycloak compatibility
+        const currentThemeId = localStorage.getItem('neura-theme') || 'dark';
+        const themeConfig = themes.find(t => t.id === currentThemeId) || themes.find(t => t.className === currentThemeId);
+        const themeClass = themeConfig ? themeConfig.className : currentThemeId;
+        
+        window.location.href = `${KONG_URL}${BACKEND_URL}/auth/logout?redirect_to=${origin}${redirectTo}&theme=${themeClass}`;
     }
 };

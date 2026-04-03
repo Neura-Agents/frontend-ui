@@ -32,9 +32,30 @@ export function ThemeProvider({
   storageKey = "vite-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<ThemeId>(
-    () => (localStorage.getItem(storageKey) as ThemeId) || defaultTheme
-  );
+  const [theme, setTheme] = useState<ThemeId>(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const themeFromUrl = urlParams.get('theme');
+    if (themeFromUrl) {
+      const found = themes.find(t => t.id === themeFromUrl) || themes.find(t => t.className === themeFromUrl);
+      if (found) {
+        const storageKeyToUse = storageKey || "neura-theme";
+        localStorage.setItem(storageKeyToUse, found.id);
+        return found.id;
+      }
+    }
+    return (localStorage.getItem(storageKey) as ThemeId) || defaultTheme;
+  });
+
+  // Clean up URL parameters after processing
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.has('theme')) {
+      urlParams.delete('theme');
+      const newSearch = urlParams.toString();
+      const newPath = window.location.pathname + (newSearch ? `?${newSearch}` : '') + window.location.hash;
+      window.history.replaceState({ ...window.history.state }, '', newPath);
+    }
+  }, []);
 
   useEffect(() => {
     const root = window.document.documentElement;
