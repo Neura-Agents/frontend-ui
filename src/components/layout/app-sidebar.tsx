@@ -377,7 +377,7 @@ export function AppSidebar() {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                             transition={{ duration: 0.3 }}
-                            className="absolute bottom-10 left-0 right-0 h-32 bg-linear-to-t from-background via-background/90 to-transparent z-20 pointer-events-none flex flex-col items-center justify-end pb-8"
+                            className="absolute bottom-13 left-0 right-0 h-32 bg-linear-to-t from-background via-background/90 to-transparent z-20 pointer-events-none flex flex-col items-center justify-end pb-8"
                         >
                             <div className="animate-bounce text-muted-foreground">
                                 <HugeiconsIcon icon={ArrowDownDoubleIcon} size={16} />

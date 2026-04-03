@@ -65,6 +65,7 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
     }, [user?.id, authLoading]);
 
     useEffect(() => {
+        const APP_NAME = import.meta.env.VITE_APP_NAME || "WormLabs";
         if (allUrls.length > 0) {
             const currentPath = location.pathname;
             // Exact match first
@@ -76,9 +77,9 @@ export const NavigationProvider: React.FC<{ children: React.ReactNode }> = ({ ch
                 if (currentPath.startsWith('/agent-chat/')) {
                     // This will be handled by the AgentChat component itself usually, 
                     // but we can set a default here
-                    document.title = "Chat | Antigravity";
+                    document.title = `Chat | ${APP_NAME}`;
                 } else if (currentPath.startsWith('/agent-edit/')) {
-                    document.title = "Edit Agent | Antigravity";
+                    document.title = `Edit Agent | ${APP_NAME}`;
                 }
             }
         }

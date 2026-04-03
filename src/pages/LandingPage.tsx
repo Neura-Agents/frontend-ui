@@ -4,11 +4,17 @@ import Section3 from "@/components/landingPage/section3";
 import Section4 from "@/components/landingPage/section4";
 import Section5 from "@/components/landingPage/section5";
 import Footer from "@/components/landingPage/footer";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 
 const LandingPage: React.FC = () => {
     const [showFooterGlow, setShowFooterGlow] = useState(false);
+    const APP_NAME = import.meta.env.VITE_APP_NAME || "WormLabs";
+
+    useEffect(() => {
+        document.title = `${APP_NAME} | Build and deploy AI agents effortlessly`;
+    }, [APP_NAME]);
+
     return (
         <div className="relative min-h-screen w-screen">
 

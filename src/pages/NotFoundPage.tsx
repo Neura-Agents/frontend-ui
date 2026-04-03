@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Ghost } from 'lucide-react';
@@ -6,6 +6,11 @@ import { Button } from '@/components/ui/button';
 
 const NotFoundPage: React.FC = () => {
   const navigate = useNavigate();
+  const APP_NAME = import.meta.env.VITE_APP_NAME || "WormLabs";
+
+  useEffect(() => {
+    document.title = `404 Not Found | ${APP_NAME}`;
+  }, [APP_NAME]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[80vh] px-4 text-center overflow-hidden">

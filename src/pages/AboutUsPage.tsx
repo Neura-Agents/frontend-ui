@@ -1,10 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import AboutHero from '@/components/aboutUs/AboutHero';
 import AboutSpacer from '@/components/aboutUs/AboutSpacer';
 import Footer from '@/components/landingPage/footer';
 
 const AboutUsPage: React.FC = () => {
     const [showFooterGlow, setShowFooterGlow] = useState(false);
+    const APP_NAME = import.meta.env.VITE_APP_NAME || "WormLabs";
+
+    useEffect(() => {
+        document.title = `About Us | ${APP_NAME}`;
+    }, [APP_NAME]);
 
     return (
         <div className="relative min-h-screen w-screen overflow-x-hidden">
