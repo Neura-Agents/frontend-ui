@@ -83,7 +83,7 @@ export const ExecuteToolDialog: React.FC<ExecuteToolDialogProps> = ({
                 }
 
                 return Object.keys(obj).reduce((acc: any, key) => {
-                    let value = cleanParams(obj[key]);
+                    const value = cleanParams(obj[key]);
 
                     // Keep explicit numbers and booleans
                     if (typeof value === 'number' || typeof value === 'boolean') {
