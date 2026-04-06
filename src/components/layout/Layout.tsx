@@ -67,7 +67,7 @@ const Layout: React.FC = () => {
         return (
             <div className="flex items-center justify-center min-h-screen bg-background animate-in fade-in duration-500">
                 <div className="animate-pulse">
-                    <Logo variant="lg" />
+                    <Logo variant="lg" noLink={true} />
                 </div>
             </div>
         );

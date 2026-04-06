@@ -7,6 +7,7 @@ interface LogoProps {
     showIcon?: boolean;
     fontSize?: string; // Still supported for custom sizes
     variant?: 'sm' | 'md' | 'lg';
+    noLink?: boolean;
 }
 
 const Logo: React.FC<LogoProps> = ({
@@ -14,7 +15,8 @@ const Logo: React.FC<LogoProps> = ({
     linkClassName,
     showIcon = true,
     fontSize,
-    variant = 'md'
+    variant = 'md',
+    noLink = false
 }) => {
     const variantStyles = {
         sm: {
@@ -36,36 +38,49 @@ const Logo: React.FC<LogoProps> = ({
 
     const styles = variantStyles[variant];
 
+    const baseClasses = cn(
+        fontSize || styles.text,
+        "group/logo font-light tracking-tight text-foreground flex flex-row items-center transition-all duration-300 font-season-mix whitespace-nowrap flex-nowrap",
+        styles.gap,
+        linkClassName || "",
+        noLink ? "" : "hover:cursor-pointer"
+    );
+
+    const logoContent = (
+        <>
+            {showIcon && (
+                <div
+                    className={cn(
+                        styles.icon,
+                        "bg-foreground transition-all duration-300",
+                        !noLink && "group-hover/logo:scale-110"
+                    )}
+                    style={{ 
+                        WebkitMaskImage: 'var(--logo-url)',
+                        maskImage: 'var(--logo-url)',
+                        WebkitMaskRepeat: 'no-repeat',
+                        maskRepeat: 'no-repeat',
+                        WebkitMaskSize: 'contain',
+                        maskSize: 'contain',
+                        WebkitMaskPosition: 'left',
+                        maskPosition: 'left'
+                    }}
+                />
+            )}
+        </>
+    );
+
     return (
         <div className={cn("flex items-center", styles.gap, className)}>
-            <Link
-                to="/"
-                className={cn(
-                    fontSize || styles.text,
-                    "group/logo font-light tracking-tight text-foreground hover:cursor-pointer flex flex-row items-center transition-all duration-300 font-season-mix whitespace-nowrap flex-nowrap",
-                    styles.gap,
-                    linkClassName
-                )}
-            >
-                {showIcon && (
-                    <div
-                        className={cn(
-                            styles.icon,
-                            "bg-foreground transition-all duration-300 group-hover/logo:scale-110"
-                        )}
-                        style={{ 
-                            WebkitMaskImage: 'var(--logo-url)',
-                            maskImage: 'var(--logo-url)',
-                            WebkitMaskRepeat: 'no-repeat',
-                            maskRepeat: 'no-repeat',
-                            WebkitMaskSize: 'contain',
-                            maskSize: 'contain',
-                            WebkitMaskPosition: 'left',
-                            maskPosition: 'left'
-                        }}
-                    />
-                )}
-            </Link>
+            {noLink ? (
+                <div className={baseClasses}>
+                    {logoContent}
+                </div>
+            ) : (
+                <Link to="/" className={baseClasses}>
+                    {logoContent}
+                </Link>
+            )}
         </div>
     );
 };
