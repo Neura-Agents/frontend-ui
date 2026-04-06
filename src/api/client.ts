@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const KONG_URL = import.meta.env.VITE_API_URL;
-
+//test
 export const apiClient = axios.create({
     baseURL: KONG_URL,
     headers: {
@@ -46,7 +46,7 @@ apiClient.interceptors.response.use(
                 message: error.message
             });
         }
-        
+
         if (error.response?.status === 402) {
             const errorData = error.response.data;
             // Throw a more useful error object for 402s
