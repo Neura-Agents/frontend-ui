@@ -104,18 +104,18 @@ export const authService = {
         const params = new URLSearchParams();
         if (idp) params.append('idp', idp);
 
-        // Map theme ID to className for Keycloak compatibility
-        // If the current theme is already a className (like 'cyberpunk'), use it.
-        // Otherwise look it up from the themes config.
         const currentThemeId = localStorage.getItem('neura-theme') || 'dark';
         const themeConfig = themes.find(t => t.id === currentThemeId) || themes.find(t => t.className === currentThemeId);
         const themeClass = themeConfig ? themeConfig.className : currentThemeId;
         params.append('theme', themeClass);
 
         // Determine where to land after login
-        const origin = (import.meta.env.VITE_APP_MODE === 'public')
-            ? window.location.origin.replace(':7999', ':8005')
-            : window.location.origin;
+        // In local dev, we replace 7999 with 8005.
+        // In production, we use VITE_DASHBOARD_URL if available.
+        const APP_MODE = (import.meta.env.VITE_APP_MODE as 'public' | 'dashboard') || 'dashboard';
+        const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL || window.location.origin.replace(':7999', ':8005');
+        
+        const origin = (APP_MODE === 'public') ? dashboardUrl : window.location.origin;
 
         if (redirectTo) params.append('redirect_to', `${origin}${redirectTo}`);
 
@@ -127,15 +127,15 @@ export const authService = {
         const params = new URLSearchParams();
         params.append('action', 'register');
 
-        // Map theme ID to className for Keycloak compatibility
         const currentThemeId = localStorage.getItem('neura-theme') || 'dark';
         const themeConfig = themes.find(t => t.id === currentThemeId) || themes.find(t => t.className === currentThemeId);
         const themeClass = themeConfig ? themeConfig.className : currentThemeId;
         params.append('theme', themeClass);
 
-        const origin = (import.meta.env.VITE_APP_MODE === 'public')
-            ? window.location.origin.replace(':7999', ':8005')
-            : window.location.origin;
+        const APP_MODE = (import.meta.env.VITE_APP_MODE as 'public' | 'dashboard') || 'dashboard';
+        const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL || window.location.origin.replace(':7999', ':8005');
+
+        const origin = (APP_MODE === 'public') ? dashboardUrl : window.location.origin;
         params.append('redirect_to', origin);
 
         const queryString = params.toString();
@@ -143,11 +143,11 @@ export const authService = {
     },
 
     logout(redirectTo: string = window.location.pathname + window.location.search) {
-        const origin = (import.meta.env.VITE_APP_MODE === 'dashboard')
-            ? window.location.origin.replace(':8005', ':7999')
-            : window.location.origin;
+        const APP_MODE = (import.meta.env.VITE_APP_MODE as 'public' | 'dashboard') || 'dashboard';
+        const landingUrl = import.meta.env.VITE_LANDING_URL || window.location.origin.replace(':8005', ':7999');
 
-        // Map theme ID to className for Keycloak compatibility
+        const origin = (APP_MODE === 'dashboard') ? landingUrl : window.location.origin;
+
         const currentThemeId = localStorage.getItem('neura-theme') || 'dark';
         const themeConfig = themes.find(t => t.id === currentThemeId) || themes.find(t => t.className === currentThemeId);
         const themeClass = themeConfig ? themeConfig.className : currentThemeId;

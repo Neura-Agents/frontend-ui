@@ -31,7 +31,8 @@ import SystemPromptsPage from './pages/SystemPromptsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardPage from './pages/DashboardPage';
 
-const APP_MODE = (import.meta.env.VITE_APP_MODE as 'public' | 'dashboard') || 'dashboard';
+const isDashboardHost = window.location.hostname.includes('dashboard') || window.location.port === '8005';
+const APP_MODE = (import.meta.env.VITE_APP_MODE as 'public' | 'dashboard') || (isDashboardHost ? 'dashboard' : 'public');
 
 const ProtectedRoute: React.FC<{ children: React.ReactNode; role?: string }> = ({ children, role }) => {
   const { user, loading, hasRole, login } = useAuth();
