@@ -57,7 +57,7 @@ jobs:
             VITE_APP_NAME=WormLabs
             VITE_API_URL=https://api.wormlabs.in
             VITE_KONG_URL=https://api.wormlabs.in
-            VITE_KEYCLOAK_URL=https://auth.wormlabs.in
+            VITE_KEYCLOAK_URL=https://console.wormlabs.in
             VITE_KEYCLOAK_REALM=agentic-ai
             VITE_DASHBOARD_URL=https://dashboard.wormlabs.in
             VITE_LANDING_URL=https://wormlabs.in
