@@ -54,7 +54,13 @@ jobs:
             ghcr.io/${{ env.REPO_LOWER }}:latest
             ghcr.io/${{ env.REPO_LOWER }}:${{ github.sha }}
           build-args: |
-             VITE_APP_NAME=WormLabs
+            VITE_APP_NAME=WormLabs
+            VITE_API_URL=https://api.wormlabs.in
+            VITE_KONG_URL=https://api.wormlabs.in
+            VITE_KEYCLOAK_URL=https://auth.wormlabs.in
+            VITE_KEYCLOAK_REALM=agentic-ai
+            VITE_DASHBOARD_URL=https://dashboard.wormlabs.in
+            VITE_LANDING_URL=https://wormlabs.in
 
   deploy:
     needs: build-and-push
