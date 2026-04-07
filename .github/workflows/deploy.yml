@@ -61,6 +61,9 @@ jobs:
             VITE_KEYCLOAK_REALM=agentic-ai
             VITE_DASHBOARD_URL=https://dashboard.wormlabs.in
             VITE_LANDING_URL=https://wormlabs.in
+            VITE_UMAMI_URL=https://analytics.wormlabs.in
+            VITE_UMAMI_PUBLIC_ID=ce6767be-dce6-42f7-8d47-92e9b6e127ed
+            VITE_UMAMI_DASHBOARD_ID=89af0dab-4e38-4ee8-997e-7cf8586df00b
 
   deploy:
     needs: build-and-push
