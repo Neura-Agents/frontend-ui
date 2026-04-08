@@ -14,7 +14,8 @@ import {
     PencilEdit02Icon,
     Delete02Icon,
     LockedIcon,
-    Globe02Icon
+    Globe02Icon,
+    Loading03Icon
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -66,20 +67,91 @@ const KnowledgeBasePage: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Ingestion state tracking
+    const activeSubscriptions = React.useRef<Record<string, () => void>>({});
 
-    const fetchKnowledgeBases = async (query?: string, pageNum: number = 1) => {
+    const subscribeToIngestion = (kbId: string, workflowId: string) => {
+        if (activeSubscriptions.current[kbId]) return;
+
+        const unsubscribe = knowledgeService.subscribeToIngestion(workflowId, 'base', (type, data) => {
+            if (type === 'status' && data.status === 'active') {
+                setKnowledgeBases(prev => prev.map(kb => 
+                    kb.id === kbId ? { ...kb, status: 'active' } : kb
+                ));
+                if (activeSubscriptions.current[kbId]) {
+                    activeSubscriptions.current[kbId]();
+                    delete activeSubscriptions.current[kbId];
+                }
+                fetchKnowledgeBases(searchQuery, page);
+            } else if (type === 'status' && data.status === 'failed') {
+               setKnowledgeBases(prev => prev.map(kb => 
+                    kb.id === kbId ? { ...kb, status: 'failed' } : kb
+                ));
+                if (activeSubscriptions.current[kbId]) {
+                    activeSubscriptions.current[kbId]();
+                    delete activeSubscriptions.current[kbId];
+                }
+            } else if (type === 'Error') {
+                console.error('Ingestion SSE connection error for KB:', kbId);
+                if (activeSubscriptions.current[kbId]) {
+                    activeSubscriptions.current[kbId]();
+                    delete activeSubscriptions.current[kbId];
+                }
+            }
+        });
+
+        activeSubscriptions.current[kbId] = unsubscribe;
+    };
+
+    React.useEffect(() => {
+        // 1. Subscribe to items that are processing
+        knowledgeBases.forEach(kb => {
+            if (kb.status === 'processing' && kb.workflow_id) {
+                subscribeToIngestion(kb.id, kb.workflow_id);
+            }
+        });
+
+        // 2. Unsubscribe from items that are no longer in the list or not processing
+        const currentProcessingIds = new Set(knowledgeBases.filter(kb => kb.status === 'processing').map(kb => kb.id));
+        Object.keys(activeSubscriptions.current).forEach(id => {
+            if (!currentProcessingIds.has(id)) {
+                activeSubscriptions.current[id]();
+                delete activeSubscriptions.current[id];
+            }
+        });
+    }, [knowledgeBases]);
+
+    const fetchKnowledgeBases = async (query?: string, pageNum: number = 1, isSilent: boolean = false) => {
         try {
-            setIsLoading(true);
+            if (!isSilent) setIsLoading(true);
             const response = await knowledgeService.getKnowledgeBases({ name: query, page: pageNum, limit });
-            setKnowledgeBases(response.items);
+            
+            // Filter out 'processing' status for items not owned by current user
+            const currentUserId = user?.id ? String(user.id).toLowerCase() : null;
+            const filteredItems = response.items.filter(kb => {
+                if (kb.status === 'processing') {
+                    return kb.user_id && String(kb.user_id).toLowerCase() === currentUserId;
+                }
+                return true;
+            });
+
+            setKnowledgeBases(filteredItems);
             setTotalItems(response.total);
             setPage(response.page);
         } catch (error) {
-            showAlert({ title: 'Error', description: 'Failed to fetch knowledge bases', variant: 'destructive' });
+            if (!isSilent) showAlert({ title: 'Error', description: 'Failed to fetch knowledge bases', variant: 'destructive' });
         } finally {
-            setIsLoading(false);
+            if (!isSilent) setIsLoading(false);
         }
     };
+
+    // Cleanup on unmount
+    React.useEffect(() => {
+        return () => {
+            Object.values(activeSubscriptions.current).forEach(unsub => unsub());
+        };
+    }, []);
 
     // Consolidated debounced fetch effect and URL sync
     React.useEffect(() => {
@@ -105,6 +177,18 @@ const KnowledgeBasePage: React.FC = () => {
 
         return () => clearTimeout(handler);
     }, [searchQuery, setSearchParams]);
+
+    // FALLBACK POLLING: Direct poll every 10s if any item is processing
+    React.useEffect(() => {
+        const hasProcessing = knowledgeBases.some(kb => kb.status === 'processing');
+        if (!hasProcessing) return;
+
+        const interval = setInterval(() => {
+            fetchKnowledgeBases(searchQuery, page, true);
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, [knowledgeBases, searchQuery, page]);
 
 
     const handleExplore = async (kb: KnowledgeBase) => {
@@ -334,63 +418,69 @@ const KnowledgeBasePage: React.FC = () => {
                                     {kb.name}
                                 </CardTitle>
                                 <div className="flex items-center gap-1 shrink-0 ml-auto">
-                                    {user?.id && kb.user_id && String(user.id).toLowerCase() === String(kb.user_id).toLowerCase() && (
+                                    {kb.status === 'processing' ? null : (
                                         <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setTestKB(kb);
-                                                            setIsQueryDialogOpen(true);
-                                                        }}
-                                                    >
-                                                        <HugeiconsIcon icon={PlayIcon} size={14} />
-                                                    </Button>
+                                                    {((user?.id && kb.user_id && String(user.id).toLowerCase() === String(kb.user_id).toLowerCase()) || kb.visibility === 'public') ? (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setTestKB(kb);
+                                                                setIsQueryDialogOpen(true);
+                                                            }}
+                                                        >
+                                                            <HugeiconsIcon icon={PlayIcon} size={14} />
+                                                        </Button>
+                                                    ) : null}
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                     <p>Query KB</p>
                                                 </TooltipContent>
                                             </Tooltip>
 
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setKbToEdit(kb);
-                                                            setIsEditDialogOpen(true);
-                                                        }}
-                                                    >
-                                                        <HugeiconsIcon icon={PencilEdit02Icon} size={14} />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Edit KB</p>
-                                                </TooltipContent>
-                                            </Tooltip>
+                                            {user?.id && kb.user_id && String(user.id).toLowerCase() === String(kb.user_id).toLowerCase() && (
+                                                <>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setKbToEdit(kb);
+                                                                    setIsEditDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                <HugeiconsIcon icon={PencilEdit02Icon} size={14} />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Edit KB</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
 
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 rounded-full hover:bg-destructive/20 hover:text-destructive"
-                                                        onClick={(e) => handleDeleteKB(kb, e)}
-                                                    >
-                                                        <HugeiconsIcon icon={Delete02Icon} size={14} />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Delete KB</p>
-                                                </TooltipContent>
-                                            </Tooltip>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 rounded-full hover:bg-destructive/20 hover:text-destructive"
+                                                                onClick={(e) => handleDeleteKB(kb, e)}
+                                                            >
+                                                                <HugeiconsIcon icon={Delete02Icon} size={14} />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Delete KB</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -411,7 +501,10 @@ const KnowledgeBasePage: React.FC = () => {
                                 </div>
                             </div>
                             <div className='pb-4 flex flex-wrap items-center gap-2 min-w-0'>
-                                <Badge variant={getStatusVariant(kb.status)} className="capitalize py-0.5 px-2.5 rounded-full text-[10px] sm:text-xs shrink-0">
+                                <Badge variant={getStatusVariant(kb.status)} className="capitalize py-0.5 px-2.5 rounded-full text-[10px] sm:text-xs shrink-0 flex items-center gap-1.5">
+                                    {kb.status === 'processing' && (
+                                        <HugeiconsIcon icon={Loading03Icon} size={10} className="animate-spin" />
+                                    )}
                                     {kb.status}
                                 </Badge>
                                 <Badge variant="outline" className="capitalize py-0.5 px-3 rounded-full border-border/60 text-[10px] sm:text-xs shrink-0">
@@ -461,11 +554,18 @@ const KnowledgeBasePage: React.FC = () => {
                 documents={formatDocsForDialog(documents)}
                 kbId={selectedKB?.id}
                 type="base"
-                onUploadSuccess={() => {
+                kbStatus={selectedKB?.status}
+                onUploadSuccess={(status) => {
+                    if (selectedKB) {
+                        setKnowledgeBases(prev => prev.map(kb => 
+                            kb.id === selectedKB.id ? { ...kb, status } : kb
+                        ));
+                    }
                     fetchKnowledgeBases();
                     if (selectedKB) handleExplore(selectedKB);
                 }}
                 onDeleteDocument={handleDeleteDocument}
+                isOwner={selectedKB?.user_id && user?.id ? String(selectedKB.user_id).toLowerCase() === String(user.id).toLowerCase() : false}
             />
 
             {/* Create Knowledge Base Dialog */}

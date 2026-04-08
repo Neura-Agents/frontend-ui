@@ -15,15 +15,19 @@ const APP_NAME = import.meta.env.VITE_APP_NAME;
 const Footer: React.FC<{ animateGlow: boolean }> = ({ animateGlow }) => {
     const footerLinks: Record<string, FooterLink[]> = {
         Products: [
-            { label: 'A2A Agents', href: '/agents' },
-            { label: 'Orchestrator Agents', href: '/agents' }
+            { label: 'A2A Agents', href: '/a2a-agents' },
+            { label: 'Orchestrator Agents', href: '/orchestrator-agents' },
+            { label: 'Capabilities', href: '/capabilities' }
         ],
         API: [
             { label: 'Documentation', href: '#' },
             { label: 'Pricing', href: '/pricing' }
         ],
         Company: [
-            { label: 'About Us', href: '/about' }
+            { label: 'About Us', href: '/about' },
+            { label: 'Contact Sales', href: '/contact' },
+            { label: 'Terms of Use', href: '/terms' },
+            { label: 'Privacy Policy', href: '/privacy' }
         ],
         Socials: [
             { label: 'Twitter', href: 'https://twitter.com', external: true },

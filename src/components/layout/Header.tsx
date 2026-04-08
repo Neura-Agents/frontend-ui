@@ -1,42 +1,41 @@
 import React, { useState, useRef } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { Button } from "../ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
-import { Login01Icon, ArrowRight01Icon, Menu01Icon, Cancel01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons";
+import { Login01Icon, Menu01Icon, Cancel01Icon, ArrowDown01Icon } from "@hugeicons/core-free-icons";
 import Logo from "../reusable/Logo";
 
 const NAV_DATA = [
     {
         title: "Platform",
         items: [
-            { title: "Agent Builder", desc: "Create intelligent agents visually" },
-            { title: "Deployment", desc: "Deploy agents at scale" },
-            { title: "Monitoring", desc: "Track performance & logs" },
+            { title: "A2A Agents", desc: "Autonomous agent-to-agent communication", href: "/a2a-agents" },
+            { title: "Orchestrator Agents", desc: "High-level goal decomposition and tasking", href: "/orchestrator-agents" },
+            { title: "Capabilities", desc: "Core infrastructure and memory systems", href: "/capabilities" },
         ],
     },
     {
         title: "Developers",
         items: [
-            { title: "SDKs", desc: "Integrate with our SDKs" },
-            { title: "API Docs", desc: "Explore API endpoints" },
-            { title: "CLI Tools", desc: "Powerful dev tools" },
+            { title: "API Reference", desc: "Comprehensive technical documentation", href: "/docs" },
+            { title: "SDKs", desc: "Official language-specific client libraries", href: "/sdks" },
+            { title: "CLI Tools", desc: "Command-line interface for agent management", href: "/cli" },
         ],
     },
     {
         title: "Resources",
         items: [
-            { title: "Documentation", desc: "Learn the platform" },
-            { title: "Guides", desc: "Step-by-step tutorials" },
-            { title: "Blog", desc: "Latest updates & insights" },
+            { title: "Documentation", desc: "Learn how to build on our platform", href: "/docs" },
+            { title: "Guides", desc: "Step-by-step implementation tutorials", href: "/guides" },
+            { title: "Blog", desc: "Latest engineering updates and insights", href: "/blog" },
         ],
     },
     {
         title: "Company",
         items: [
-            { title: "About Us", desc: "Who we are" },
-            { title: "Careers", desc: "Join our team" },
-            { title: "Contact", desc: "Get in touch" },
+            { title: "About Us", desc: "Our mission and the team behind the platform", href: "/about" },
+            { title: "Contact Sales", desc: "Discuss enterprise solutions with us", href: "/contact" },
         ],
     },
 ];
@@ -166,6 +165,8 @@ const Header: React.FC = () => {
                                                         key={subItem.title}
                                                         title={subItem.title}
                                                         desc={subItem.desc}
+                                                        href={subItem.href}
+                                                        onClick={() => setActiveMenu(null)}
                                                     />
                                                 ))}
                                             </div>
@@ -209,7 +210,9 @@ const Header: React.FC = () => {
                                                             key={subItem.title}
                                                             title={subItem.title}
                                                             desc={subItem.desc}
+                                                            href={subItem.href}
                                                             isMobile
+                                                            onClick={() => setIsMobileMenuOpen(false)}
                                                         />
                                                     ))}
                                                 </div>
@@ -247,24 +250,29 @@ export default Header;
 const MenuItem = ({
     title,
     desc,
+    href = "#",
     isMobile,
+    onClick,
 }: {
     title: string;
     desc: string;
+    href?: string;
     isMobile?: boolean;
+    onClick?: () => void;
 }) => {
     return (
-        <div className={`
-            flex flex-col gap-1.5 rounded-2xl hover:bg-muted/50 transition-all duration-300 cursor-pointer group/item border border-transparent hover:border-border/50
-            ${isMobile ? "p-3 bg-muted/20" : "p-4"}
-        `}>
-            <span className="font-semibold text-[0.95rem] group-hover/item:text-primary transition-colors flex items-center gap-2">
+        <Link 
+            to={href}
+            onClick={onClick}
+            className={`
+                flex flex-col gap-1.5 rounded-2xl hover:bg-muted/50 transition-all duration-300 cursor-pointer group/item border border-transparent hover:border-border/50
+                ${isMobile ? "p-3 bg-muted/20" : "p-4 text-left"}
+            `}
+        >
+            <span className="font-semibold text-[0.95rem] group-hover/item:text-primary transition-colors">
                 {title}
-                <span className={`transition-all ${isMobile ? "opacity-100 translate-x-0 ml-auto" : "opacity-0 group-hover/item:opacity-100 -translate-x-2 group-hover/item:translate-x-0"}`}>
-                    <HugeiconsIcon icon={ArrowRight01Icon} size={14} />
-                </span>
             </span>
             <span className="text-sm text-muted-foreground leading-relaxed">{desc}</span>
-        </div>
+        </Link>
     );
 };

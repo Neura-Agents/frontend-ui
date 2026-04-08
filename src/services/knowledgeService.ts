@@ -9,22 +9,24 @@ export interface KnowledgeBase {
     description: string;
     documentCount: number;
     lastUpdated: string;
-    status: 'active' | 'inactive' | 'processing';
+    status: 'active' | 'inactive' | 'processing' | 'failed';
     visibility: 'public' | 'private';
     user_id?: string;
+    workflow_id?: string;
 }
 
 export interface KnowledgeGraph {
     id: string;
     name: string;
     description: string;
-    nodeCount: number;
-    relationCount: number;
-    documentCount?: number;
+    documentCount: number;
+    node_count: number;
+    relation_count: number;
     lastUpdated: string;
-    status: 'active' | 'inactive' | 'processing';
+    status: 'active' | 'inactive' | 'processing' | 'failed';
     visibility: 'public' | 'private';
     user_id?: string;
+    workflow_id?: string;
 }
 
 export interface KnowledgeDocument {
@@ -102,8 +104,8 @@ export const knowledgeService = {
                 id: kg.id,
                 name: kg.name,
                 description: kg.description,
-                nodeCount: parseInt(kg.node_count || '0'),
-                relationCount: parseInt(kg.relation_count || '0'),
+                node_count: parseInt(kg.node_count || '0'),
+                relation_count: parseInt(kg.relation_count || '0'),
                 documentCount: parseInt(kg.documentCount || '0'),
                 lastUpdated: new Date(kg.updated_at).toLocaleDateString(),
                 status: kg.status,
@@ -185,6 +187,7 @@ export const knowledgeService = {
 
         eventSource.onerror = (err) => {
             console.error('SSE connection error:', err);
+            onEvent('Error', { message: 'SSE connection error' });
             eventSource.close();
         };
 

@@ -30,6 +30,10 @@ import AboutUsPage from './pages/AboutUsPage';
 import SystemPromptsPage from './pages/SystemPromptsPage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardPage from './pages/DashboardPage';
+import AgentInfoPage from './pages/AgentInfoPage';
+import CapabilitiesPage from './pages/CapabilitiesPage';
+import ContactPage from './pages/ContactPage';
+import { TermsPage, PrivacyPage } from './pages/LegalPages';
 
 const isDashboardHost = window.location.hostname.includes('dashboard') || window.location.port === '8005';
 const APP_MODE = (import.meta.env.VITE_APP_MODE as 'public' | 'dashboard') || (isDashboardHost ? 'dashboard' : 'public');
@@ -74,9 +78,13 @@ function AppRoutes() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/about" element={<AboutUsPage />} />
           <Route path="/pricing" element={<PricingPage />} />
-          {/* If the user is logged in and on the public site, we might want a redirect? 
-              But for now, all other routes on 7999 go to 404 or redirect back to home. */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="/a2a-agents" element={<AgentInfoPage type="a2a" />} />
+          <Route path="/orchestrator-agents" element={<AgentInfoPage type="orchestrator" />} />
+          <Route path="/capabilities" element={<CapabilitiesPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     );
@@ -185,6 +193,10 @@ function AppRoutes() {
         {/* Pricing/About are still conceptually available but maybe shouldn't be the focus here.
             But for completeness, let's keep them if they are on 8000 too. */}
         <Route path="/pricing" element={<PricingPage />} />
+        <Route path="/a2a-agents" element={<AgentInfoPage type="a2a" />} />
+        <Route path="/orchestrator-agents" element={<AgentInfoPage type="orchestrator" />} />
+        <Route path="/capabilities" element={<CapabilitiesPage />} />
+        <Route path="/contact" element={<ContactPage />} />
 
         <Route
           path="/billing"

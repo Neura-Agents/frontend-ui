@@ -14,8 +14,10 @@ interface KbDocumentsDialogProps {
     documents: Document[];
     kbId: string | undefined;
     type: 'base' | 'graph';
-    onUploadSuccess?: () => void;
+    kbStatus?: 'active' | 'inactive' | 'processing' | 'failed';
+    onUploadSuccess?: (status: 'active' | 'processing' | 'failed') => void;
     onDeleteDocument?: (docId: string, docName: string) => void;
+    isOwner?: boolean;
 }
 
 interface PendingDoc {
@@ -31,23 +33,26 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
     kbId,
     type,
     onUploadSuccess,
-    onDeleteDocument
+    onDeleteDocument,
+    isOwner = false,
+    kbStatus
 }) => {
     const { showAlert } = useAlert();
     const [localDocs, setLocalDocs] = useState<Document[]>(documents);
     const [pendingDocs, setPendingDocs] = useState<PendingDoc[]>([]);
-    const [isUploading, setIsUploading] = useState(false);
+    const [isUploading, setIsUploading] = useState(kbStatus === 'processing');
     const [activeWorkflowId, setActiveWorkflowId] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     // Sync local documents when initial documents prop changes
     useEffect(() => {
         setLocalDocs(documents);
+        setIsUploading(kbStatus === 'processing');
         if (!isOpen) {
             setPendingDocs([]);
             setActiveWorkflowId(null);
         }
-    }, [documents, isOpen]);
+    }, [documents, isOpen, kbStatus]);
 
     // SSE Subscription logic
     useEffect(() => {
@@ -61,16 +66,14 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
                 console.log('SSE Event:', eventType, data);
                 
                 if (eventType === 'doc_progress' || eventType === 'doc_start' || eventType === 'doc_completed' || eventType === 'doc_failed') {
-                    const { docId, processedChunks, totalChunks } = data;
+                    const { docId } = data;
                     
                     setLocalDocs(prev => prev.map(doc => {
                         if (doc.id === docId) {
                             return {
                                 ...doc,
                                 status: eventType === 'doc_completed' ? 'completed' : 
-                                        eventType === 'doc_failed' ? 'failed' : 'processing',
-                                processed_chunks: processedChunks !== undefined ? processedChunks : doc.processed_chunks,
-                                total_chunks: totalChunks !== undefined ? totalChunks : doc.total_chunks
+                                        eventType === 'doc_failed' ? 'failed' : 'processing'
                             };
                         }
                         return doc;
@@ -81,7 +84,8 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
                     // Ingestion fully complete
                     showAlert({ title: 'Success', description: 'Knowledge ingestion complete', variant: 'success' });
                     setActiveWorkflowId(null);
-                    if (onUploadSuccess) onUploadSuccess();
+                    setIsUploading(false);
+                    if (onUploadSuccess) onUploadSuccess('active');
                 }
 
                 if (eventType === 'status' && data.status === 'failed') {
@@ -96,6 +100,8 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
                         showAlert({ title: 'Ingestion Failed', description: message, variant: 'destructive' });
                     }
                     setActiveWorkflowId(null);
+                    setIsUploading(false);
+                    if (onUploadSuccess) onUploadSuccess('failed');
                 }
             }
         );
@@ -104,13 +110,9 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
             console.log('Unsubscribing from SSE');
             unsubscribe();
         };
-    }, [activeWorkflowId, isOpen, type]);
+    }, [activeWorkflowId, isOpen, type, showAlert, onUploadSuccess]);
 
     const hasNewDocs = pendingDocs.length > 0;
-
-    const handleUploadClick = () => {
-        fileInputRef.current?.click();
-    };
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const files = event.target.files;
@@ -174,6 +176,7 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
             if (response.workflowId) {
                 setActiveWorkflowId(response.workflowId);
             }
+            if (onUploadSuccess) onUploadSuccess('processing');
         } catch (error: any) {
             if (error.status === 402) {
                 showAlert({ 
@@ -203,7 +206,9 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
         }
     };
 
-    const columns = getColumns(handleInternalDelete);
+    const columns = getColumns(handleInternalDelete, isOwner, kbStatus === 'processing' || !!activeWorkflowId);
+
+    const isProcessingInProgress = isUploading || !!activeWorkflowId || kbStatus === 'processing';
 
     return (
         <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -216,21 +221,25 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
                                 Explore the context files available in this {type === 'base' ? 'knowledge base' : 'knowledge graph'}.
                             </DialogDescription>
                         </div>
-                        <input
-                            type="file"
-                            ref={fileInputRef}
-                            className="hidden"
-                            multiple
-                            onChange={handleFileChange}
-                        />
-                        <Button
-                            variant="default"
-                            className='rounded-full w-fit'
-                            onClick={handleUploadClick}
-                            disabled={isUploading || !!activeWorkflowId}
-                        >
-                            Upload Documents
-                        </Button>
+                        {isOwner && (
+                            <>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    multiple
+                                    onChange={handleFileChange}
+                                />
+                                <Button
+                                    variant="default"
+                                    className='rounded-full w-fit'
+                                    onClick={() => !isProcessingInProgress && fileInputRef.current?.click()}
+                                    disabled={isProcessingInProgress}
+                                >
+                                    Upload Documents
+                                </Button>
+                            </>
+                        )}
                     </div>
                 </DialogHeader>
 
@@ -241,10 +250,10 @@ export const KbDocumentsDialog: React.FC<KbDocumentsDialogProps> = ({
                     />
                 </div>
 
-                {hasNewDocs && !activeWorkflowId && (
+                {isOwner && hasNewDocs && !activeWorkflowId && (
                     <DialogFooter className="animate-in slide-in-from-bottom-2 duration-300 gap-2">
-                        <Button variant="ghost" className="rounded-full" onClick={handleCancel} disabled={isUploading}>Cancel</Button>
-                        <Button variant="default" className="rounded-full" onClick={handleSave} disabled={isUploading}>
+                        <Button variant="ghost" className="rounded-full" onClick={handleCancel} disabled={isProcessingInProgress}>Cancel</Button>
+                        <Button variant="default" className="rounded-full" onClick={handleSave} disabled={isProcessingInProgress}>
                             {isUploading ? 'Uploading...' : 'Start Ingestion'}
                         </Button>
                     </DialogFooter>

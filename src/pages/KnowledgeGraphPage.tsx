@@ -14,7 +14,8 @@ import {
     Delete02Icon,
     LockedIcon,
     Globe02Icon,
-    PlayIcon
+    PlayIcon,
+    Loading03Icon
 } from '@hugeicons/core-free-icons';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { useUmami } from '@/hooks/useUmami';
@@ -66,19 +67,90 @@ const KnowledgeGraphPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
     const [isLoading, setIsLoading] = useState(true);
 
-    const fetchKnowledgeGraphs = async (query?: string, pageNum: number = 1) => {
+    // Ingestion state tracking
+    const activeSubscriptions = React.useRef<Record<string, () => void>>({});
+
+    const subscribeToIngestion = (kgId: string, workflowId: string) => {
+        if (activeSubscriptions.current[kgId]) return;
+
+        const unsubscribe = knowledgeService.subscribeToIngestion(workflowId, 'graph', (type, data) => {
+            if (type === 'status' && data.status === 'active') {
+                setKnowledgeGraphs(prev => prev.map(kg => 
+                    kg.id === kgId ? { ...kg, status: 'active' } : kg
+                ));
+                if (activeSubscriptions.current[kgId]) {
+                    activeSubscriptions.current[kgId]();
+                    delete activeSubscriptions.current[kgId];
+                }
+                fetchKnowledgeGraphs(searchQuery, page);
+            } else if (type === 'status' && data.status === 'failed') {
+               setKnowledgeGraphs(prev => prev.map(item => 
+                    item.id === kgId ? { ...item, status: 'failed' } : item
+                ));
+                if (activeSubscriptions.current[kgId]) {
+                    activeSubscriptions.current[kgId]();
+                    delete activeSubscriptions.current[kgId];
+                }
+            } else if (type === 'Error') {
+                console.error('Ingestion SSE connection error for KG:', kgId);
+                if (activeSubscriptions.current[kgId]) {
+                    activeSubscriptions.current[kgId]();
+                    delete activeSubscriptions.current[kgId];
+                }
+            }
+        });
+
+        activeSubscriptions.current[kgId] = unsubscribe;
+    };
+
+    React.useEffect(() => {
+        // 1. Subscribe to items that are processing
+        knowledgeGraphs.forEach(kg => {
+            if (kg.status === 'processing' && kg.workflow_id) {
+                subscribeToIngestion(kg.id, kg.workflow_id);
+            }
+        });
+
+        // 2. Unsubscribe from items that are no longer in the list or not processing
+        const currentProcessingIds = new Set(knowledgeGraphs.filter(kg => kg.status === 'processing').map(kg => kg.id));
+        Object.keys(activeSubscriptions.current).forEach(id => {
+            if (!currentProcessingIds.has(id)) {
+                activeSubscriptions.current[id]();
+                delete activeSubscriptions.current[id];
+            }
+        });
+    }, [knowledgeGraphs]);
+
+    const fetchKnowledgeGraphs = async (query?: string, pageNum: number = 1, isSilent: boolean = false) => {
         try {
-            setIsLoading(true);
+            if (!isSilent) setIsLoading(true);
             const response = await knowledgeService.getKnowledgeGraphs({ name: query, page: pageNum, limit });
-            setKnowledgeGraphs(response.items);
+            
+            // Filter out 'processing' status for items not owned by current user
+            const currentUserId = user?.id ? String(user.id).toLowerCase() : null;
+            const filteredItems = response.items.filter(kg => {
+                if (kg.status === 'processing') {
+                    return kg.user_id && String(kg.user_id).toLowerCase() === currentUserId;
+                }
+                return true;
+            });
+
+            setKnowledgeGraphs(filteredItems);
             setTotalItems(response.total);
             setPage(response.page);
         } catch (error) {
-            showAlert({ title: 'Error', description: 'Failed to fetch knowledge graphs', variant: 'destructive' });
+            if (!isSilent) showAlert({ title: 'Error', description: 'Failed to fetch knowledge graphs', variant: 'destructive' });
         } finally {
-            setIsLoading(false);
+            if (!isSilent) setIsLoading(false);
         }
     };
+
+    // Cleanup on unmount
+    React.useEffect(() => {
+        return () => {
+            Object.values(activeSubscriptions.current).forEach(unsub => unsub());
+        };
+    }, []);
 
     // Consolidated debounced fetch effect and URL sync
     React.useEffect(() => {
@@ -104,6 +176,18 @@ const KnowledgeGraphPage: React.FC = () => {
 
         return () => clearTimeout(handler);
     }, [searchQuery, setSearchParams]);
+
+    // FALLBACK POLLING: Direct poll every 10s if any item is processing
+    React.useEffect(() => {
+        const hasProcessing = knowledgeGraphs.some(kg => kg.status === 'processing');
+        if (!hasProcessing) return;
+
+        const interval = setInterval(() => {
+            fetchKnowledgeGraphs(searchQuery, page, true);
+        }, 10000);
+
+        return () => clearInterval(interval);
+    }, [knowledgeGraphs, searchQuery, page]);
 
 
     const handleExplore = async (kg: KnowledgeGraph) => {
@@ -324,69 +408,75 @@ const KnowledgeGraphPage: React.FC = () => {
                                     {kg.name}
                                 </CardTitle>
                                 <div className="flex items-center gap-1 shrink-0 ml-auto">
-                                    {user?.id && kg.user_id && String(user.id).toLowerCase() === String(kg.user_id).toLowerCase() && (
+                                    {kg.status === 'processing' ? null : (
                                         <div className="flex items-center gap-1 bg-muted/30 p-1 rounded-full border border-border/50">
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setTestKG(kg);
-                                                            setIsQueryDialogOpen(true);
-                                                            
-                                                            // Track visualization
-                                                            track('kg-visualize', {
-                                                                kg_id: kg.id,
-                                                                kg_name: kg.name
-                                                            });
-                                                        }}
-                                                    >
-                                                        <HugeiconsIcon icon={PlayIcon} size={14} />
-                                                    </Button>
+                                                    {((user?.id && kg.user_id && String(user.id).toLowerCase() === String(kg.user_id).toLowerCase()) || kg.visibility === 'public') ? (
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                setTestKG(kg);
+                                                                setIsQueryDialogOpen(true);
+                                                                
+                                                                // Track visualization
+                                                                track('kg-visualize', {
+                                                                    kg_id: kg.id,
+                                                                    kg_name: kg.name
+                                                                });
+                                                            }}
+                                                        >
+                                                            <HugeiconsIcon icon={PlayIcon} size={14} />
+                                                        </Button>
+                                                    ) : null}
                                                 </TooltipTrigger>
                                                 <TooltipContent>
                                                     <p>Visualize KG</p>
                                                 </TooltipContent>
                                             </Tooltip>
 
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 rounded-full hover:bg-primary/10 hover:text-primary"
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setKgToEdit(kg);
-                                                            setIsEditDialogOpen(true);
-                                                        }}
-                                                    >
-                                                        <HugeiconsIcon icon={PencilEdit02Icon} size={14} />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Edit KG</p>
-                                                </TooltipContent>
-                                            </Tooltip>
+                                            {user?.id && kg.user_id && String(user.id).toLowerCase() === String(kg.user_id).toLowerCase() && (
+                                                <>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 rounded-full hover:bg-primary/20 hover:text-primary"
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    setKgToEdit(kg);
+                                                                    setIsEditDialogOpen(true);
+                                                                }}
+                                                            >
+                                                                <HugeiconsIcon icon={PencilEdit02Icon} size={14} />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Edit KG</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
 
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-7 w-7 rounded-full hover:bg-destructive/10 hover:text-destructive"
-                                                        onClick={(e) => handleDeleteKG(kg, e)}
-                                                    >
-                                                        <HugeiconsIcon icon={Delete02Icon} size={14} />
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>
-                                                    <p>Delete KG</p>
-                                                </TooltipContent>
-                                            </Tooltip>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-7 w-7 rounded-full hover:bg-destructive/20 hover:text-destructive"
+                                                                onClick={(e) => handleDeleteKG(kg, e)}
+                                                            >
+                                                                <HugeiconsIcon icon={Delete02Icon} size={14} />
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>
+                                                            <p>Delete KG</p>
+                                                        </TooltipContent>
+                                                    </Tooltip>
+                                                </>
+                                            )}
                                         </div>
                                     )}
                                 </div>
@@ -399,11 +489,11 @@ const KnowledgeGraphPage: React.FC = () => {
                             <div className="flex flex-wrap items-center justify-between text-[10px] sm:text-xs text-muted-foreground gap-2 min-w-0">
                                 <div className="flex items-center gap-3 bg-muted/20 px-2 py-1 rounded-md shrink-0">
                                     <div className="flex items-center gap-1">
-                                        <span className="font-bold text-foreground">{kg.nodeCount}</span>
+                                        <span className="font-bold text-foreground">{kg.node_count || 0}</span>
                                         <span>Nodes</span>
                                     </div>
-                                    <div className="flex items-center gap-1">
-                                        <span className="font-bold text-foreground">{kg.relationCount}</span>
+                                    <div className="flex items-center gap-1 border-l border-border/40 pl-3">
+                                        <span className="font-bold text-foreground">{kg.relation_count || 0}</span>
                                         <span>Relations</span>
                                     </div>
                                 </div>
@@ -413,7 +503,10 @@ const KnowledgeGraphPage: React.FC = () => {
                                 </div>
                             </div>
                             <div className='flex flex-wrap items-center gap-2 min-w-0'>
-                                <Badge variant={getStatusVariant(kg.status)} className="capitalize py-0.5 px-2.5 rounded-full text-[10px] sm:text-xs shrink-0">
+                                <Badge variant={getStatusVariant(kg.status)} className="capitalize py-0.5 px-2.5 rounded-full text-[10px] sm:text-xs shrink-0 flex items-center gap-1.5 font-bold">
+                                    {kg.status === 'processing' && (
+                                        <HugeiconsIcon icon={Loading03Icon} size={10} className="animate-spin" />
+                                    )}
                                     {kg.status}
                                 </Badge>
                                 <Badge variant="outline" className="capitalize py-0.5 px-3 rounded-full border-border/60 text-[10px] sm:text-xs shrink-0">
@@ -465,11 +558,18 @@ const KnowledgeGraphPage: React.FC = () => {
                 documents={formatDocsForDialog(documents)}
                 kbId={selectedKG?.id}
                 type="graph"
-                onUploadSuccess={() => {
+                kbStatus={selectedKG?.status}
+                onUploadSuccess={(status) => {
+                    if (selectedKG) {
+                        setKnowledgeGraphs(prev => prev.map(kg => 
+                            kg.id === selectedKG.id ? { ...kg, status } : kg
+                        ));
+                    }
                     fetchKnowledgeGraphs();
                     if (selectedKG) handleExplore(selectedKG);
                 }}
                 onDeleteDocument={handleDeleteDocument}
+                isOwner={selectedKG?.user_id && user?.id ? String(selectedKG.user_id).toLowerCase() === String(user.id).toLowerCase() : false}
             />
 
             {/* Create Knowledge Graph Dialog */}

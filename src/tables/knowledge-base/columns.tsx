@@ -3,7 +3,7 @@
 import type { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { ArrowUpRight01Icon, Delete02Icon } from "@hugeicons/core-free-icons"
+import { ArrowUpRight01Icon, Delete02Icon, Loading03Icon } from "@hugeicons/core-free-icons"
 import { getAuthToken } from "@/api/client"
 import { Button } from "@/components/ui/button"
 
@@ -21,7 +21,11 @@ export type Document = {
     total_chunks?: number;
 }
 const KONG_URL = import.meta.env.VITE_API_URL;
-export const getColumns = (onDelete?: (id: string, name: string) => void): ColumnDef<Document>[] => [
+export const getColumns = (
+    onDelete?: (id: string, name: string) => void, 
+    isOwner: boolean = false,
+    parentProcessing: boolean = false
+): ColumnDef<Document>[] => [
     {
         accessorKey: "name",
         header: "Document Name",
@@ -47,36 +51,24 @@ export const getColumns = (onDelete?: (id: string, name: string) => void): Colum
         cell: ({ row }) => {
             const doc = row.original;
             const status = doc.status || 'pending';
-            const processed = doc.processed_chunks || 0;
-            const total = doc.total_chunks || 0;
 
-            if (status === 'processing') {
-                return (
-                    <div className="flex flex-col gap-1 min-w-[100px]">
-                        <div className="flex justify-between text-[10px] font-bold text-primary tabular-nums">
-                            <span>Ingesting...</span>
-                            <span>{total > 0 ? Math.round((processed / total) * 100) : 0}%</span>
-                        </div>
-                        <div className="h-1 w-full bg-primary/10 rounded-full overflow-hidden">
-                            <div 
-                                className="h-full bg-primary transition-all duration-500" 
-                                style={{ width: `${total > 0 ? (processed / total) * 100 : 0}%` }} 
-                            />
-                        </div>
-                        <span className="text-[9px] text-muted-foreground">{processed}/{total} chunks</span>
-                    </div>
-                );
-            }
+            const getVariant = (s: string) => {
+                switch (s) {
+                    case 'completed': return 'success';
+                    case 'failed': return 'destructive';
+                    case 'processing': return 'soft';
+                    default: return 'soft';
+                }
+            };
 
             return (
                 <Badge 
-                    variant="soft" 
-                    className={`text-[10px] uppercase font-bold px-2 py-0.5 rounded ${
-                        status === 'completed' ? 'bg-success/10 text-success border-success/20' : 
-                        status === 'failed' ? 'bg-destructive/10 text-destructive border-destructive/20' : 
-                        'bg-muted/30 text-muted-foreground'
-                    }`}
+                    variant={getVariant(status)} 
+                    className="text-[10px] uppercase px-2 py-0.5 rounded-full flex items-center gap-1.5 w-fit"
                 >
+                    {status === 'processing' && (
+                         <HugeiconsIcon icon={Loading03Icon} size={10} className="animate-spin" />
+                    )}
                     {status}
                 </Badge>
             );
@@ -137,12 +129,13 @@ export const getColumns = (onDelete?: (id: string, name: string) => void): Colum
                             <HugeiconsIcon icon={ArrowUpRight01Icon} size={18} /> View
                         </a>
                     )}
-                    {onDelete && (
+                    {isOwner && onDelete && (
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                            onClick={() => onDelete(docId, docName)}
+                            disabled={parentProcessing}
+                            className={`h-8 w-8 text-destructive hover:bg-destructive/10 ${parentProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            onClick={() => !parentProcessing && onDelete(docId, docName)}
                         >
                             <HugeiconsIcon icon={Delete02Icon} size={16} />
                         </Button>
