@@ -33,6 +33,7 @@ import DashboardPage from './pages/DashboardPage';
 import AgentInfoPage from './pages/AgentInfoPage';
 import CapabilitiesPage from './pages/CapabilitiesPage';
 import ContactPage from './pages/ContactPage';
+import RevenuePage from './pages/RevenuePage';
 import { TermsPage, PrivacyPage } from './pages/LegalPages';
 
 const isDashboardHost = window.location.hostname.includes('dashboard') || window.location.port === '8005';
@@ -163,6 +164,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute role="platform-admin">
               <UsersPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/revenue"
+          element={
+            <ProtectedRoute role="platform-admin">
+              <RevenuePage />
             </ProtectedRoute>
           }
         />

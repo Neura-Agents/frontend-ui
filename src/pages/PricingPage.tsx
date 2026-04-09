@@ -144,9 +144,17 @@ const PricingPage: React.FC = () => {
     };
 
     const handleBuyPlan = (planData: PricingCardProps) => {
+        const APP_MODE = (import.meta.env.VITE_APP_MODE as 'public' | 'dashboard') || 'dashboard';
+        
+        if (APP_MODE === 'public') {
+            // Jump to dashboard pricing which handles auth & flow
+            const dashboardUrl = import.meta.env.VITE_DASHBOARD_URL || window.location.origin.replace(':7999', ':8005');
+            window.location.href = `${dashboardUrl}/pricing`;
+            return;
+        }
+
         if (!user) {
-            // If not logged in, redirect to login
-            login(undefined, window.location.href);
+            login();
             return;
         }
 

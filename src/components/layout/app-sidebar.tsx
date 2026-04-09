@@ -22,6 +22,7 @@ import {
     KeyIcon,
     PieChartIcon,
     Wallet03Icon,
+    Wallet02Icon,
     Invoice01Icon,
     BrandfetchIcon,
     UserIcon,
@@ -73,6 +74,7 @@ const ICON_MAP: Record<string, any> = {
     'Home09Icon': Home09Icon,
     'InformationCircleIcon': InformationCircleIcon,
     'Wallet03Icon': Wallet03Icon,
+    'Wallet02Icon': Wallet02Icon,
     'AiScanIcon': AiScanIcon,
     'Add01Icon': Add01Icon,
     'Search02Icon': Search02Icon,
@@ -210,7 +212,7 @@ export function AppSidebar() {
     };
 
     // Map the API data into the format expected by the UI, injecting the Search button if needed
-    const groupedNavItems = navGroups.map(group => {
+    const processedGroups = navGroups.map(group => {
         // Map icon strings to Hugeicons components and handle Search injection
         const mappedItems = group.items.map((item: any) => ({
             title: item.title,
@@ -235,6 +237,8 @@ export function AppSidebar() {
             items: mappedItems
         };
     }).filter(Boolean);
+
+    const groupedNavItems = [...processedGroups];
 
     return (
         <>
