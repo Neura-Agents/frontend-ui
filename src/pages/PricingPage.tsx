@@ -96,7 +96,8 @@ const PricingPage: React.FC = () => {
                 key: orderData.keyId,
                 amount: orderData.amount,
                 currency: orderData.currency,
-                name: "Agentic AI Platform",
+                name: "WormLabs",
+                image: `${window.location.origin}/WormLabsLogoDark.png`,
                 description: `Top up ${displayValue} ${data.credits ? 'credits' : 'INR'}`,
                 order_id: orderData.orderId,
                 handler: async function (response: any) {
