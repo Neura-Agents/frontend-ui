@@ -27,7 +27,12 @@ const UmamiAnalytics: React.FC<{ children: React.ReactNode }> = ({ children }) =
       ? import.meta.env.VITE_UMAMI_PUBLIC_ID 
       : import.meta.env.VITE_UMAMI_DASHBOARD_ID;
 
-    if (!umamiUrl || !websiteId) {
+    const enableAnalytics = import.meta.env.VITE_ENABLE_ANALYTICS !== 'false';
+
+    if (!enableAnalytics || !umamiUrl || !websiteId) {
+      if (!enableAnalytics && umamiUrl && websiteId) {
+        console.debug('[Umami] Analytics disabled via VITE_ENABLE_ANALYTICS');
+      }
       return;
     }
 
