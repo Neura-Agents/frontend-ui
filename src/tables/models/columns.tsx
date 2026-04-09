@@ -34,11 +34,20 @@ export const columns: ColumnDef<Model>[] = [
     {
         accessorKey: "cost_input",
         header: "Input / 1M",
-        cell: ({ row }) => {
+        cell: ({ row, table }) => {
             const cost = row.getValue("cost_input") as number;
+            const meta = table.options.meta as any;
+            const currency = meta?.currency || 'USD';
+            const rate = meta?.exchangeRates?.[currency] || 1;
+            
             return (
                 <span className="text-sm font-medium text-foreground">
-                    ${(cost * 1000000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                    {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: currency,
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 4
+                    }).format(cost * 1000000 * rate)}
                 </span>
             )
         }
@@ -46,11 +55,20 @@ export const columns: ColumnDef<Model>[] = [
     {
         accessorKey: "cost_output",
         header: "Output / 1M",
-        cell: ({ row }) => {
+        cell: ({ row, table }) => {
             const cost = row.getValue("cost_output") as number;
+            const meta = table.options.meta as any;
+            const currency = meta?.currency || 'USD';
+            const rate = meta?.exchangeRates?.[currency] || 1;
+
             return (
                 <span className="text-sm font-medium text-foreground">
-                    ${(cost * 1000000).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}
+                    {new Intl.NumberFormat('en-US', {
+                        style: 'currency',
+                        currency: currency,
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 4
+                    }).format(cost * 1000000 * rate)}
                 </span>
             )
         }

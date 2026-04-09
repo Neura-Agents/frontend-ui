@@ -15,7 +15,7 @@ import {
     TooltipContent,
     TooltipTrigger
 } from "@/components/ui/tooltip";
-import { InformationCircleIcon } from "@hugeicons/core-free-icons";
+import { GiftIcon, InformationCircleIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 
 interface AddCreditsDialogProps {
@@ -23,24 +23,46 @@ interface AddCreditsDialogProps {
     onClose: () => void;
     onAdd: (data: { credits?: number, amount?: number }) => void;
     isLoading: boolean;
+    defaultAmount?: number;
+    defaultMode?: 'credits' | 'inr';
+    exchangeRate?: number;
 }
 
 const AddCreditsDialog: React.FC<AddCreditsDialogProps> = ({
     isOpen,
     onClose,
     onAdd,
-    isLoading
+    isLoading,
+    defaultAmount = 100,
+    defaultMode = 'credits',
+    exchangeRate = 83.50 // Fallback
 }) => {
-    const [amount, setAmount] = useState<number>(100); // This will hold the primary value based on mode
-    const [mode, setMode] = useState<'credits' | 'inr'>('credits');
-    const exchangeRate = 83.50; // Current approx rate
+    const [amount, setAmount] = useState<number>(defaultAmount); // This will hold the primary value based on mode
+    const [mode, setMode] = useState<'credits' | 'inr'>(defaultMode);
     const MAX_CREDITS_PER_TXN = 100000;
 
+    // Reset internal state when dialog opens with new defaults
+    React.useEffect(() => {
+        if (isOpen) {
+            setAmount(defaultAmount);
+            setMode(defaultMode);
+        }
+    }, [isOpen, defaultAmount, defaultMode]);
+
     // The 'credits' value we always need for the 'onAdd' callback
-    const totalCreditsAdded = mode === 'credits' ? amount : amount / exchangeRate;
+    const baseCredits = mode === 'credits' ? amount : amount / exchangeRate;
     const totalInr = mode === 'inr' ? amount : amount * exchangeRate;
 
-    const isOverLimit = totalCreditsAdded > MAX_CREDITS_PER_TXN;
+    const getFixedBonus = (usd: number) => {
+        if (usd >= 500) return { amount: 75, tier: 'BUSINESS' };
+        if (usd >= 100) return { amount: 10, tier: 'PRO' };
+        return { amount: 0, tier: null };
+    };
+
+    const bonus = getFixedBonus(baseCredits);
+    const finalCredits = baseCredits + bonus.amount;
+
+    const isOverLimit = baseCredits > MAX_CREDITS_PER_TXN;
 
     const handleIncrement = () => {
         const increment = (mode === 'credits' ? 50 : 500);
@@ -65,7 +87,7 @@ const AddCreditsDialog: React.FC<AddCreditsDialogProps> = ({
             setAmount(totalInr);
             setMode('inr');
         } else {
-            setAmount(totalCreditsAdded);
+            setAmount(baseCredits);
             setMode('credits');
         }
     };
@@ -141,10 +163,10 @@ const AddCreditsDialog: React.FC<AddCreditsDialogProps> = ({
                         Switch to {mode === 'credits' ? 'Currency' : 'Credits'}
                     </Button>
 
-                    <div className="text-center space-y-2">
+                    <div className="text-center space-y-3 w-full max-w-[320px]">
                         {mode === 'credits' ? (
                             <p className="text-[12px] text-muted-foreground font-medium flex items-center justify-center gap-1">
-                                You Pay Appox. <span className="text-foreground font-bold">₹{(totalCreditsAdded * exchangeRate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                                You Pay Approx. <span className="text-foreground font-bold">₹{(baseCredits * exchangeRate).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                                 <Tooltip delayDuration={0}>
                                     <TooltipTrigger asChild>
                                         <button className="inline-flex items-center text-muted-foreground/60 hover:text-foreground transition-colors focus:outline-none">
@@ -152,14 +174,47 @@ const AddCreditsDialog: React.FC<AddCreditsDialogProps> = ({
                                         </button>
                                     </TooltipTrigger>
                                     <TooltipContent className="max-w-[200px] text-xs" side="top">
-                                        The amount will be calculated on the time its initated so there might be some difference.
+                                        Amount is calculated using live conversion rates.
                                     </TooltipContent>
                                 </Tooltip>
                             </p>
-                        ) : (
-                            <p className="text-[12px] text-muted-foreground font-medium">
-                                You get <span className="text-foreground font-bold">{totalCreditsAdded.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Credits</span>
-                            </p>
+                        ) : null}
+
+                        <div className="flex flex-col items-center gap-1 w-full rounded-2xl py-3 px-4 transition-all">
+                            <div className="flex justify-between w-full text-[11px] text-muted-foreground px-1">
+                                <span>Base Credits</span>
+                                <span className="font-bold text-foreground">{baseCredits.toFixed(2)}</span>
+                            </div>
+
+                            {bonus.amount > 0 && (
+                                <div className="flex justify-between w-full text-[11px] text-success px-1 font-bold animate-in slide-in-from-left-2 duration-300">
+                                    <span className="flex items-center gap-1">
+                                        <HugeiconsIcon icon={GiftIcon} size={10} />
+                                        {bonus.tier} Bonus
+                                    </span>
+                                    <span>+{bonus.amount.toFixed(2)}</span>
+                                </div>
+                            )}
+
+                            <div className="h-px w-full bg-border my-1.5" />
+
+                            <div className="flex justify-between w-full text-sm font-bold px-1 items-baseline">
+                                <span className="text-muted-foreground text-[12px]">Total Added</span>
+                                <span className="text-primary text-[12px] tracking-tight">
+                                    {finalCredits.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        </div>
+
+                        {bonus.tier && (
+                            <div className="animate-in zoom-in-95 duration-300 pt-1">
+                                <span className={cn(
+                                    "px-3 py-1 rounded-full text-[10px] font-bold tracking-wider",
+                                    bonus.tier === 'BUSINESS' ? "bg-primary text-primary-foreground" : "bg-success/10 text-success border border-success/20"
+                                )}>
+                                    {bonus.tier} TIER REACHED
+                                </span>
+                            </div>
                         )}
                     </div>
                     {isOverLimit && (

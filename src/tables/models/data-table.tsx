@@ -25,17 +25,20 @@ interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
     loading?: boolean
+    meta?: any
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
-    loading
+    loading,
+    meta
 }: DataTableProps<TData, TValue>) {
     const table = useReactTable({
         data,
         columns,
         getCoreRowModel: getCoreRowModel(),
+        meta,
     })
 
     return (
