@@ -43,7 +43,7 @@ const DashboardPage: React.FC = () => {
                 </div>
                 <Link to="/billing">
                     <Button className='rounded-full px-4 py-4' variant='outline'>
-                        <HugeiconsIcon icon={Wallet03Icon} /> 
+                        <HugeiconsIcon icon={Wallet03Icon} />
                         {loading ? (
                             <Skeleton className="h-4 w-12 ml-2" />
                         ) : (

@@ -7,6 +7,7 @@ import { Search02Icon, Wallet02Icon, UserMultipleIcon, Invoice01Icon, PieChartIc
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Input } from '@/components/ui/input';
 import Pagination from '@/components/ui/pagination';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Calendar } from "@/components/ui/calendar"
 import {
     Popover,
@@ -20,10 +21,21 @@ import { cn } from "@/lib/utils"
 import { useSearchParams } from 'react-router-dom';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { revenueService, type Transaction, type RevenueStats, type RevenueInsights } from '@/services/revenueService';
+import { usageService } from '@/services/usageService';
 import { columns } from '@/tables/revenue/columns';
 import { DataTable } from '@/tables/revenue/data-table';
 import { RevenueGrowthChart } from '@/charts/revenue/RevenueGrowthChart';
 import { TransactionVolumeChart } from '@/charts/revenue/TransactionVolumeChart';
+
+const CURRENCIES = [
+    { code: 'USD', symbol: '$', label: 'US Dollar' },
+    { code: 'INR', symbol: '₹', label: 'Indian Rupee' },
+    { code: 'EUR', symbol: '€', label: 'Euro' },
+    { code: 'GBP', symbol: '£', label: 'British Pound' },
+    { code: 'JPY', symbol: '¥', label: 'Japanese Yen' },
+    { code: 'CAD', symbol: 'C$', label: 'Canadian Dollar' },
+    { code: 'AUD', symbol: 'A$', label: 'Australian Dollar' },
+];
 
 const RevenuePage: React.FC = () => {
     const [searchParams, setSearchParams] = useSearchParams();
@@ -42,6 +54,11 @@ const RevenuePage: React.FC = () => {
     const pageSize = 10;
 
     const [isOpen, setIsOpen] = React.useState(false);
+    const [currency, setCurrency] = React.useState('USD');
+    const [exchangeRates, setExchangeRates] = React.useState<Record<string, number>>({
+        USD: 1,
+    });
+
     const [date, setDate] = React.useState<DateRange | undefined>(() => {
         const from = fromParam ? new Date(fromParam) : subDays(new Date(), 30);
         const to = toParam ? new Date(toParam) : new Date();
@@ -110,6 +127,20 @@ const RevenuePage: React.FC = () => {
         }
     }, [date]);
 
+    React.useEffect(() => {
+        const fetchRates = async () => {
+            try {
+                const data = await usageService.getExchangeRates();
+                if (data && data.rates) {
+                    setExchangeRates(prev => ({ ...prev, ...data.rates }));
+                }
+            } catch (error) {
+                console.error('Failed to fetch internal exchange rates:', error);
+            }
+        };
+        fetchRates();
+    }, []);
+
     const totalRevenue = stats.reduce((acc, curr) => acc + curr.revenue, 0);
     const totalProfit = stats.reduce((acc, curr) => acc + curr.profit, 0);
 
@@ -126,81 +157,96 @@ const RevenuePage: React.FC = () => {
                             Monitor platform health, transactions, and financial growth metrics.
                         </Typography>
                     </div>
-
-                    <div className="flex items-center gap-3 pr-4">
-                        <Popover open={isOpen} onOpenChange={setIsOpen}>
-                            <PopoverTrigger asChild>
-                                <Button
-                                    variant="outline"
-                                    size="lg"
-                                    className={cn(
-                                        "flex items-center gap-2.5 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary focus-visible:outline-none",
-                                        !date && "text-muted-foreground"
-                                    )}
-                                >
-                                    <CalendarIcon className="size-4 text-muted-foreground" />
-                                    {date?.from ? (
-                                        date.to && format(date.from, "LLL dd, y") !== format(date.to, "LLL dd, y") ? (
-                                            <>{format(date.from, "LLL dd, y")} - {format(date.to, "LLL dd, y")}</>
-                                        ) : (
-                                            format(date.from, "LLL dd, y")
-                                        )
-                                    ) : (
-                                        <span>Pick a date range</span>
-                                    )}
-                                </Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0 rounded-xl overflow-hidden border-border shadow-2xl" align="end">
-                                <div className="flex flex-col md:flex-row h-full">
-                                    {!isMobile && (
-                                        <div className="border-r border-border p-2 flex flex-col items-center justify-center gap-1 bg-card">
-                                            {[
-                                                { label: 'Today', getValue: () => ({ from: new Date(), to: new Date() }) },
-                                                { label: 'Yesterday', getValue: () => ({ from: subDays(new Date(), 1), to: subDays(new Date(), 1) }) },
-                                                { label: 'Last 7 Days', getValue: () => ({ from: subDays(new Date(), 6), to: new Date() }) },
-                                                { label: 'Last 30 Days', getValue: () => ({ from: subDays(new Date(), 29), to: new Date() }) },
-                                                { label: 'This Month', getValue: () => ({ from: new Date(new Date().getFullYear(), new Date().getMonth(), 1), to: new Date() }) },
-                                                {
-                                                    label: 'Last Month', getValue: () => {
-                                                        const now = new Date();
-                                                        const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-                                                        const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
-                                                        return { from: firstDayLastMonth, to: lastDayLastMonth };
-                                                    }
-                                                },
-                                            ].map((option) => (
-                                                <Button
-                                                    key={option.label}
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    className="w-full justify-start font-normal rounded-lg px-3 py-1.5 h-auto text-xs"
-                                                    onClick={() => {
-                                                        setDate(option.getValue());
-                                                        setIsOpen(false);
-                                                    }}
-                                                >
-                                                    {option.label}
-                                                </Button>
-                                            ))}
-                                        </div>
-                                    )}
-                                    <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={date?.from}
-                                        selected={date}
-                                        onSelect={setDate}
-                                        numberOfMonths={isMobile ? 1 : 2}
-                                        className="p-3"
-                                    />
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    </div>
                 </div>
             </section>
 
-            <div className='px-2 pt-12 flex flex-col gap-8'>
+            <div className='px-2 pt-0 flex flex-col gap-6'>
+                {/* ─── FILTERS ─── */}
+                <section className='flex items-center justify-end gap-4'>
+                    <Select value={currency} onValueChange={(val) => setCurrency(val)}>
+                        <SelectTrigger className="h-11 w-[140px] rounded-full border border-border px-4">
+                            <SelectValue placeholder="USD" />
+                        </SelectTrigger>
+                        <SelectContent className='rounded-xl'>
+                            {CURRENCIES.map(curr => (
+                                <SelectItem key={curr.code} value={curr.code} className='rounded-lg'>
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-muted-foreground w-4">{curr.symbol}</span>
+                                        <span>{curr.code}</span>
+                                    </div>
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                    <Popover open={isOpen} onOpenChange={setIsOpen}>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant="outline"
+                                size="lg"
+                                className={cn(
+                                    "flex items-center gap-2.5 rounded-full border border-border px-4 py-2 text-sm font-medium transition-colors hover:bg-secondary focus-visible:outline-none",
+                                    !date && "text-muted-foreground"
+                                )}
+                            >
+                                <CalendarIcon className="size-4 text-muted-foreground" />
+                                {date?.from ? (
+                                    date.to && format(date.from, "LLL dd, y") !== format(date.to, "LLL dd, y") ? (
+                                        <>{format(date.from, "LLL dd, y")} - {format(date.to, "LLL dd, y")}</>
+                                    ) : (
+                                        format(date.from, "LLL dd, y")
+                                    )
+                                ) : (
+                                    <span>Pick a date range</span>
+                                )}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0 rounded-xl overflow-hidden border-border shadow-2xl" align="end">
+                            <div className="flex flex-col md:flex-row h-full">
+                                {!isMobile && (
+                                    <div className="border-r border-border p-2 flex flex-col items-center justify-center gap-1 bg-card">
+                                        {[
+                                            { label: 'Today', getValue: () => ({ from: new Date(), to: new Date() }) },
+                                            { label: 'Yesterday', getValue: () => ({ from: subDays(new Date(), 1), to: subDays(new Date(), 1) }) },
+                                            { label: 'Last 7 Days', getValue: () => ({ from: subDays(new Date(), 6), to: new Date() }) },
+                                            { label: 'Last 30 Days', getValue: () => ({ from: subDays(new Date(), 29), to: new Date() }) },
+                                            { label: 'This Month', getValue: () => ({ from: new Date(new Date().getFullYear(), new Date().getMonth(), 1), to: new Date() }) },
+                                            {
+                                                label: 'Last Month', getValue: () => {
+                                                    const now = new Date();
+                                                    const firstDayLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+                                                    const lastDayLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+                                                    return { from: firstDayLastMonth, to: lastDayLastMonth };
+                                                }
+                                            },
+                                        ].map((option) => (
+                                            <Button
+                                                key={option.label}
+                                                variant="ghost"
+                                                size="sm"
+                                                className="w-full justify-start font-normal rounded-lg px-3 py-1.5 h-auto text-xs"
+                                                onClick={() => {
+                                                    setDate(option.getValue());
+                                                    setIsOpen(false);
+                                                }}
+                                            >
+                                                {option.label}
+                                            </Button>
+                                        ))}
+                                    </div>
+                                )}
+                                <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={date?.from}
+                                    selected={date}
+                                    onSelect={setDate}
+                                    numberOfMonths={isMobile ? 1 : 2}
+                                    className="p-3"
+                                />
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                </section>
                 {/* ─── KPIS ─── */}
                 <section className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6'>
                     <Card className='border-border bg-card/50'>
@@ -211,7 +257,14 @@ const RevenuePage: React.FC = () => {
                         <CardContent>
                             {loading ? <Skeleton className="h-8 w-24" /> : (
                                 <>
-                                    <Typography scale='xl' weight='bold'>${totalRevenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
+                                    <Typography scale='xl' weight='bold'>
+                                        {new Intl.NumberFormat('en-US', {
+                                            style: 'currency',
+                                            currency: currency,
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        }).format(totalRevenue * (exchangeRates[currency] || 1))}
+                                    </Typography>
                                     <Typography scale='xs' className="text-emerald-500 flex items-center gap-1 mt-1">
                                         <HugeiconsIcon icon={PieChartIcon} size={12} />
                                         +{insights?.growth_rate}% from last month
@@ -229,7 +282,14 @@ const RevenuePage: React.FC = () => {
                         <CardContent>
                             {loading ? <Skeleton className="h-8 w-24" /> : (
                                 <>
-                                    <Typography scale='xl' weight='bold'>${totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</Typography>
+                                    <Typography scale='xl' weight='bold'>
+                                        {new Intl.NumberFormat('en-US', {
+                                            style: 'currency',
+                                            currency: currency,
+                                            minimumFractionDigits: 2,
+                                            maximumFractionDigits: 2
+                                        }).format(totalProfit * (exchangeRates[currency] || 1))}
+                                    </Typography>
                                     <Typography scale='xs' className="text-muted-foreground mt-1">
                                         Margin: {totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : '0'}%
                                     </Typography>
