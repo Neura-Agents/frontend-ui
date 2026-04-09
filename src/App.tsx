@@ -190,13 +190,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
-        {/* Pricing/About are still conceptually available but maybe shouldn't be the focus here.
-            But for completeness, let's keep them if they are on 8000 too. */}
-        <Route path="/pricing" element={<PricingPage />} />
-        <Route path="/a2a-agents" element={<AgentInfoPage type="a2a" />} />
-        <Route path="/orchestrator-agents" element={<AgentInfoPage type="orchestrator" />} />
-        <Route path="/capabilities" element={<CapabilitiesPage />} />
-        <Route path="/contact" element={<ContactPage />} />
+        <Route
+          path="/pricing"
+          element={
+            <ProtectedRoute role="platform-users">
+              <PricingPage />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/billing"
