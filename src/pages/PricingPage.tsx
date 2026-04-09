@@ -111,7 +111,6 @@ const PricingPage: React.FC = () => {
 
                         track('top-up-success-pricing', data);
                         setIsProcessing(false);
-                        setIsDialogOpen(false);
                         // 4. Navigate to billing page on success
                         navigate('/billing');
                     } catch (error) {
@@ -122,7 +121,7 @@ const PricingPage: React.FC = () => {
                 },
                 prefill: {
                     name: user?.name || "User",
-                    email: user?.email || "",
+                    email: user?.email || "user@example.com",
                 },
                 theme: {
                     color: "#000000",
@@ -336,6 +335,7 @@ const PricingPage: React.FC = () => {
                     isOpen={isDialogOpen}
                     onClose={() => setIsDialogOpen(false)}
                     onAdd={(amount) => {
+                        setIsDialogOpen(false);
                         handleTopUp(amount);
                     }}
                     isLoading={isProcessing}

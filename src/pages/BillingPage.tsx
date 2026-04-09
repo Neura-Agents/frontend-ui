@@ -11,6 +11,7 @@ import Pagination from '@/components/ui/pagination';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Refresh01Icon } from '@hugeicons/core-free-icons';
+import { useAuth } from '@/context/AuthContext';
 
 import AddCreditsDialog from '@/components/billing/AddCreditsDialog';
 
@@ -25,6 +26,7 @@ const loadRazorpayScript = () => {
 };
 
 const BillingPage: React.FC = () => {
+    const { user } = useAuth();
     const [balance, setBalance] = useState<number>(0);
     const [loading, setLoading] = useState(true);
     const [isTopUpLoading, setIsTopUpLoading] = useState(false);
@@ -126,8 +128,8 @@ const BillingPage: React.FC = () => {
                     }
                 },
                 prefill: {
-                    name: "User",
-                    email: "user@example.com",
+                    name: user?.name || "User",
+                    email: user?.email || "user@example.com",
                 },
                 theme: {
                     color: "#000000",
